@@ -1,0 +1,247 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+:root {
+    --sidebar-width: 240px;
+    --bg: #8d102f;
+    --accent: #ffffff;
+    --text: #ffffff;
+}
+
+body {
+    font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+}
+
+.app-wrap {
+    display: flex;
+}
+
+.main-content {
+    margin-left: var(--sidebar-width);
+    flex: 1;
+    padding: 20px;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.sidebar .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 4px;
+    margin-bottom: 12px;
+}
+
+.brand .logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--bg);
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    text-decoration: none;
+    padding: 10px 8px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.nav a:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+}
+
+.nav a.active-link {
+    background: rgba(255, 255, 255, 0.12);
+    font-weight: 600;
+}
+
+.nav a .icon {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.95;
+    font-size: 18px;
+}
+
+.sidebar .spacer {
+    flex: 1;
+}
+
+.logout {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+@media (max-width: 800px) {
+    .sidebar {
+        position: fixed;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease-in-out;
+        z-index: 999;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 10px; /* Reducir padding en móvil */
+        box-sizing: border-box;
+    }
+
+    .toggle-btn {
+        position: fixed;
+        left: 12px;
+        top: 12px;
+        z-index: 1000;
+        background: var(--bg);
+        color: var(--text);
+        border: none;
+        padding: 8px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+}
+
+
+.brand-link,
+.brand-link:hover {
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+.brand-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+.brand-link.active-link {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+
+/* REQ 3: Estilos para el dropdown de "Paquetes" */
+.nav-item {
+    display: flex;
+    flex-direction: column;
+}
+
+/* El botón para desplegar (ej. "Paquetes") */
+.nav-toggle {
+    position: relative; /* Necesario para posicionar la flecha */
+}
+
+/* La flecha del dropdown */
+.nav-toggle .arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    opacity: 0.8;
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Gira la flecha cuando el menú está activo (clase 'active' añadida por JS) */
+.nav-toggle.active .arrow {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* El contenedor del sub-menú (oculto por defecto) */
+.sub-nav {
+    max-height: 0;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.15); /* Fondo oscuro para diferenciar */
+    border-radius: 6px;
+    margin: 4px 0;
+    transition: max-height 0.3s ease-out;
+}
+
+/* Clase 'open' (añadida por JS) para mostrar el sub-menú */
+.sub-nav.open {
+    max-height: 200px; /* Ajusta esto si tienes más enlaces */
+}
+
+/* Estilo de los enlaces del sub-menú (hijos) */
+.sub-nav a {
+    /* Añadimos padding-left para indentar los enlaces hijos */
+    padding-left: 48px; 
+    font-size: 14px; /* Fuente ligeramente más pequeña */
+}
+
+.sub-nav a .icon {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+
+/* REQ 6 & 7: Estilos para la parte inferior (Ayuda y Logout) */
+.nav-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px; /* Espacio entre Ayuda y Cerrar Sesión */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 12px;
+    margin-top: 12px;
+}
+.nav-footer a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    text-decoration: none;
+    padding: 10px 8px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+.nav-footer a:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+.nav-footer a.active-link {
+    background: rgba(255, 255, 255, 0.12);
+    font-weight: 600;
+}
+.nav-footer a.logout-link {
+    opacity: 0.85; /* Hacer el logout ligeramente menos prominente */
+}
+.nav-footer a.logout-link:hover {
+    background: rgba(200, 50, 50, 0.2); /* Fondo rojizo al pasar el mouse */
+    opacity: 1;
+}
+
+/* Quitar el 'logout' anterior que estaba separado */
+.logout {
+    display: none;
+}

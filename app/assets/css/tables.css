@@ -1,0 +1,154 @@
+:root {
+    --primary: #500101;
+    --accent: #a30f0f;
+    --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    --text-dark: #212529;
+    --text-medium: #6c757d;
+    --text-light: #ced4da;
+    --bg-light: #f8f9fa;
+}
+
+.table-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 30px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.table-header h1 {
+    color: var(--primary);
+    font-size: 26px;
+    margin: 0;
+    font-weight: 700;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.btn-primary:hover {
+    background: var(--accent);
+    transform: translateY(-2px);
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    /* Scroll horizontal en pantallas pequeñas */
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.data-table thead th {
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    font-weight: 600;
+    text-align: left;
+    padding: 15px 12px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.data-table tbody td {
+    padding: 15px 12px;
+    color: var(--text-medium);
+    border-bottom: 1px solid #e9ecef;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+    background-color: #fdfafb;
+}
+
+/* Botones de acción en la tabla */
+.btn-action {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-right: 5px;
+}
+
+.btn-action.edit {
+    background-color: #e6f7ff;
+    color: #0056b3;
+}
+
+.btn-action.delete {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* --- ESTILOS PARA STATUS DE PAQUETES (MODIFICADO) --- */
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #fff;
+    background-color: #6c757d; /* Gris por defecto */
+    display: inline-block;
+    min-width: 80px; /* Ancho mínimo para que se vean bien */
+    text-align: center;
+}
+
+/* Status Antiguo (como fallback) */
+.status-badge.status-registrado {
+    background-color: #6c757d; /* Gris */
+}
+
+/* Status Nuevos */
+.status-badge.status-ensede {
+    background-color: #007bff; /* Azul */
+}
+
+.status-badge.status-enruta {
+    background-color: #ffc107; /* Amarillo (texto oscuro) */
+    color: #212529;
+}
+
+.status-badge.status-transferido {
+    background-color: #fd7e14; /* Naranja */
+}
+
+.status-badge.status-entregado {
+    background-color: #28a745; /* Verde */
+}
+
+/* Usamos "devolucion" (sin tilde) porque el PHP 
+  en gestion.php la convierte a minúsculas y quita caracteres especiales
+*/
+.status-badge.status-devolucion {
+    background-color: #dc3545; /* Rojo */
+}
+
+/* .status-cancelado ya existía, se mantiene por si acaso */
+.status-cancelado {
+    background-color: #dc3545; /* Rojo */
+}

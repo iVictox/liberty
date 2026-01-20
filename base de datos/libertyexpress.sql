@@ -1,0 +1,254 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Servidor: 127.0.0.1
+-- Tiempo de generación: 10-11-2025 a las 15:08:37
+-- Versión del servidor: 10.4.32-MariaDB
+-- Versión de PHP: 8.0.30
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Base de datos: `libertyexpress`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `actividad`
+--
+
+CREATE TABLE `actividad` (
+  `Actividad_id` int(11) NOT NULL,
+  `Tipo_Actividad` varchar(100) NOT NULL,
+  `Fecha` timestamp NULL DEFAULT current_timestamp(),
+  `Detalle` text DEFAULT NULL,
+  `Codigo_Paquete` varchar(50) DEFAULT NULL,
+  `Usuario_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `destino`
+--
+
+CREATE TABLE `destino` (
+  `Destino_id` int(11) NOT NULL,
+  `Nombre` varchar(100) NOT NULL,
+  `Modalidad` varchar(50) DEFAULT NULL,
+  `Estado` varchar(50) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Volcado de datos para la tabla `destino`
+--
+
+INSERT INTO `destino` (`Destino_id`, `Nombre`, `Modalidad`, `Estado`) VALUES
+(3, 'Caracas', 'Tienda', 'Activo'),
+(4, 'Naguanagua', 'Ruta', 'Activo');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `notificacion`
+--
+
+CREATE TABLE `notificacion` (
+  `Notificacion_id` int(11) NOT NULL,
+  `Usuario_id` int(11) DEFAULT NULL,
+  `Mensaje` text NOT NULL,
+  `Fecha_Publicacion` timestamp NULL DEFAULT current_timestamp(),
+  `Fecha_Expiracion` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `origen`
+--
+
+CREATE TABLE `origen` (
+  `Origen_id` int(11) NOT NULL,
+  `Nombre` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Volcado de datos para la tabla `origen`
+--
+
+INSERT INTO `origen` (`Origen_id`, `Nombre`) VALUES
+(9, 'Internacional'),
+(6, 'Nacional');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `paquete`
+--
+
+CREATE TABLE `paquete` (
+  `Codigo` varchar(50) NOT NULL,
+  `Origen_id` int(11) NOT NULL,
+  `Fecha_Registro` timestamp NULL DEFAULT current_timestamp(),
+  `Tipo_Destino_ID` varchar(50) NOT NULL,
+  `Destino_id` int(11) NOT NULL,
+  `Usuario_id` int(11) NOT NULL,
+  `Status` varchar(20) DEFAULT 'Registrado'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Volcado de datos para la tabla `paquete`
+--
+
+INSERT INTO `paquete` (`Codigo`, `Origen_id`, `Fecha_Registro`, `Tipo_Destino_ID`, `Destino_id`, `Usuario_id`, `Status`) VALUES
+('NC-29842897', 6, '2025-11-10 13:48:39', 'Tienda', 3, 1, 'En Sede'),
+('NC-95830ASEFD', 9, '2025-11-02 20:54:40', 'Tienda', 3, 1, 'En Sede'),
+('WR-io40456089', 9, '2025-11-02 20:58:40', 'Ruta', 4, 1, 'Entregado');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `rol`
+--
+
+CREATE TABLE `rol` (
+  `id` int(11) NOT NULL,
+  `Nombre` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `rol`
+--
+
+INSERT INTO `rol` (`id`, `Nombre`) VALUES
+(3, 'Administrador'),
+(1, 'Almacenista'),
+(2, 'Coordinador');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `usuario`
+--
+
+CREATE TABLE `usuario` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(30) NOT NULL,
+  `apellido` varchar(30) NOT NULL,
+  `turno` int(11) NOT NULL,
+  `correo` varchar(255) NOT NULL,
+  `contraseña` varchar(100) NOT NULL,
+  `estado` int(11) NOT NULL,
+  `rol_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+--
+-- Volcado de datos para la tabla `usuario`
+--
+
+INSERT INTO `usuario` (`id`, `nombre`, `apellido`, `turno`, `correo`, `contraseña`, `estado`, `rol_id`) VALUES
+(1, 'Anderliz', 'Mendoza', 0, 'menzaander@gmail.com', '$2y$10$vUDXCfcLHcpSsmdGHgekOeATbRXRCGGp78KnqWAPrQ0IDw.24Icw6', 1, 3),
+(5, 'Ana', 'Lopez', 1, 'Ana@gmail.com', '$2y$10$oX3iJOHtQaQv/XQA7AIp1uq6fHPWRJFaQQj/DEhLz4oJla.0.kT7.', 1, 3);
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `actividad`
+--
+ALTER TABLE `actividad`
+  ADD PRIMARY KEY (`Actividad_id`);
+
+--
+-- Indices de la tabla `destino`
+--
+ALTER TABLE `destino`
+  ADD PRIMARY KEY (`Destino_id`);
+
+--
+-- Indices de la tabla `notificacion`
+--
+ALTER TABLE `notificacion`
+  ADD PRIMARY KEY (`Notificacion_id`);
+
+--
+-- Indices de la tabla `origen`
+--
+ALTER TABLE `origen`
+  ADD PRIMARY KEY (`Origen_id`),
+  ADD UNIQUE KEY `Nombre` (`Nombre`);
+
+--
+-- Indices de la tabla `paquete`
+--
+ALTER TABLE `paquete`
+  ADD PRIMARY KEY (`Codigo`);
+
+--
+-- Indices de la tabla `rol`
+--
+ALTER TABLE `rol`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `Nombre` (`Nombre`);
+
+--
+-- Indices de la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `actividad`
+--
+ALTER TABLE `actividad`
+  MODIFY `Actividad_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `destino`
+--
+ALTER TABLE `destino`
+  MODIFY `Destino_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `notificacion`
+--
+ALTER TABLE `notificacion`
+  MODIFY `Notificacion_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `origen`
+--
+ALTER TABLE `origen`
+  MODIFY `Origen_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
+-- AUTO_INCREMENT de la tabla `rol`
+--
+ALTER TABLE `rol`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT de la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

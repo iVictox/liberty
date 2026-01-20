@@ -1,0 +1,128 @@
+.login-img {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 10px;
+}
+.login-img img {
+	max-width: 120px;
+	border-radius: 50%;
+	box-shadow: 0 2px 8px #500101fb;
+}
+.welcome-msg {
+	text-align: center;
+	font-weight: normal;
+	font-size: 16px;
+	color: #500101fb;
+    margin-bottom: 2px;
+    margin-top: 0;
+}
+
+body {
+	margin: 0;
+	font-family: Arial, Helvetica, sans-serif;
+	background: #ffff url('../img/Plantilla.4.jpg') repeat fixed;
+	background-size: 500px 300px;
+	position: relative;
+}
+
+body::after {
+	content: "";
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background: rgba(255, 255, 255, 0.911);
+	pointer-events: none;
+	z-index: 0;
+}
+.login-container, .login-form {
+	position: relative;
+	z-index: 1;
+}
+.login-container {
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.login-form {
+	background: #fff;
+	padding: 28px 22px 22px 22px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+	width: 100%;
+	max-width: 340px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	box-shadow: 0 18px 50px rgba(0,0,0,0.20), 0 6px 12px rgba(0,0,0,0.08);
+	border-radius: 10px;
+}
+
+.login-form h2 {
+	text-align: center;
+    margin-bottom: 4px;
+	font-size: 22px;
+	color: #222;
+}
+.form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.form-group label {
+	font-size: 14px;
+	color: #555;
+}
+.form-group input {
+	padding: 10px 12px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	font-size: 15px;
+	background: #fafafa;
+}
+.form-group input:focus {
+	outline: none;
+	border-color: #888;
+}
+.password-box {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+.password-box input {
+	flex: 1;
+	padding-right: 38px;
+}
+.toggle-password {
+	position: absolute;
+	right: 6px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 4px;
+	color: #888;
+	display: flex;
+	align-items: center;
+}
+.toggle-password:focus {
+	outline: 2px solid #bbb;
+}
+.login-btn {
+	background: #500101fb;
+	color: #fff;
+	border: none;
+	padding: 10px 0;
+	border-radius: 5px;
+	font-size: 16px;
+	font-weight: 600;
+	cursor: pointer;
+	margin-top: 8px;
+	transition: background 0.5s;
+}
+.login-btn:hover {
+	background: #7202026b;
+}
