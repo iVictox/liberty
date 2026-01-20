@@ -1,7 +1,6 @@
 <?php
 session_start();
 include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php');
-
 $mensaje = $_SESSION['mensaje'] ?? null;
 unset($_SESSION['mensaje']);
 
@@ -21,20 +20,24 @@ try {
     <link rel="stylesheet" href="/liberty/app/assets/css/tables.css"> 
     <link rel="stylesheet" href="/liberty/app/assets/css/forms.css">
     <link rel="stylesheet" href="/liberty/app/assets/css/modal.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="app-wrap">
         <?php include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/includes/menu.php'); ?>
         <main class="main-content">
+
+            <?php if ($mensaje): ?>
+                <div class="mensaje <?php echo $mensaje['tipo']; ?>">
+                    <?php echo htmlspecialchars($mensaje['texto']); ?>
+                </div>
+            <?php endif; ?>
+
             <div class="table-container">
                 <div class="table-header">
-                    <h1>Gestión de Destinos</h1>
-                    <button id="btn-open-crear" class="btn-primary">+ Registrar Nuevo</button>
+                    <h1>Destinos</h1>
+                    <button id="btn-open-crear" class="btn-primary"><i class="fas fa-plus"></i> Nuevo Destino</button>
                 </div>
-
-                <?php if ($mensaje): ?>
-                    <div class="mensaje <?php echo $mensaje['tipo']; ?>"><?php echo htmlspecialchars($mensaje['texto']); ?></div>
-                <?php endif; ?>
 
                 <div class="table-responsive">
                     <table class="data-table">
@@ -42,35 +45,34 @@ try {
                             <tr>
                                 <th>ID</th>
                                 <th>Nombre</th>
-                                <th>Tipo de Destino</th> 
+                                <th>Tipo (Modalidad)</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($destinos)): ?>
-                                <tr><td colspan="5">No hay destinos registrados.</td></tr>
+                                <tr><td colspan="5" style="text-align:center;">No hay destinos registrados.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($destinos as $destino): ?>
                                     <tr>
-                                        <td><?php echo $destino->Destino_id; ?></td>
+                                        <td><strong><?php echo $destino->Destino_id; ?></strong></td>
                                         <td><?php echo htmlspecialchars($destino->Nombre); ?></td>
-                                        <td><?php echo htmlspecialchars($destino->Modalidad); ?></td>
-                                        <td><?php echo htmlspecialchars($destino->Estado); ?></td>
+                                        <td><span class="status-badge" style="background:#f1f5f9; color:#475569;"><?php echo htmlspecialchars($destino->Modalidad); ?></span></td>
+                                        <td>
+                                            <span class="status-badge <?php echo ($destino->Estado == 'Activo') ? 'status-entregado' : 'status-devolucion'; ?>">
+                                                <?php echo htmlspecialchars($destino->Estado); ?>
+                                            </span>
+                                        </td>
                                         <td>
                                             <button class="btn-action edit btn-open-editar" 
-                                                    data-id="<?php echo $destino->Destino_id; ?>"
-                                                    data-nombre="<?php echo htmlspecialchars($destino->Nombre); ?>"
-                                                    data-modalidad="<?php echo htmlspecialchars($destino->Modalidad); ?>"
-                                                    data-estado="<?php echo htmlspecialchars($destino->Estado); ?>">
-                                                Editar
+                                                data-id="<?php echo $destino->Destino_id; ?>"
+                                                data-nombre="<?php echo htmlspecialchars($destino->Nombre); ?>"
+                                                data-modalidad="<?php echo htmlspecialchars($destino->Modalidad); ?>"
+                                                data-estado="<?php echo htmlspecialchars($destino->Estado); ?>"
+                                                title="Editar">
+                                                <i class="fas fa-edit"></i> Editar
                                             </button>
-                                            
-                                            <a href="/liberty/app/db/functions/destino/eliminar.php?id=<?php echo $destino->Destino_id; ?>" 
-                                               class="btn-action delete" 
-                                               onclick="return confirm('¿Está seguro de que desea eliminar este destino?');">
-                                                Eliminar
-                                            </a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -83,35 +85,34 @@ try {
     </div> 
 
     <div class="modal-backdrop" id="modal-backdrop"></div>
+
     <div class="modal-content" id="modal-crear">
         <div class="modal-header">
-            <h2>Registrar Nuevo Destino</h2>
+            <h2>Nuevo Destino</h2>
             <button class="modal-close-btn" data-modal-id="modal-crear">×</button>
         </div>
         <div class="modal-body">
             <form action="/liberty/app/db/functions/destino/crear.php" method="POST" class="form-container">
                 <div class="form-group">
-                    <label for="crear-nombre" class="form-label">Nombre del Destino</label>
+                    <label for="crear-nombre" class="form-label">Nombre</label>
                     <input type="text" id="crear-nombre" name="nombre" class="form-control" required>
                 </div>
-                
                 <div class="form-group">
-                    <label for="crear-modalidad" class="form-label">Tipo de Destino</label>
-                    <select id="crear-modalidad" name="modalidad" class="form-control" required>
+                    <label for="crear-modalidad" class="form-label">Modalidad</label>
+                    <select id="crear-modalidad" name="modalidad" class="form-control">
                         <option value="Ruta">Ruta</option>
                         <option value="Tienda">Tienda</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label for="crear-estado" class="form-label">Estado</label>
-                    <select id="crear-estado" name="estado" class="form-control" required>
+                    <select id="crear-estado" name="estado" class="form-control">
                         <option value="Activo">Activo</option>
                         <option value="Inactivo">Inactivo</option>
                     </select>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn-submit">Registrar</button>
+                    <button type="submit" class="btn-submit">Guardar</button>
                 </div>
             </form>
         </div>
@@ -125,21 +126,19 @@ try {
         <div class="modal-body">
             <form id="form-editar" action="" method="POST" class="form-container">
                 <div class="form-group">
-                    <label for="editar-nombre" class="form-label">Nombre del Destino</label>
+                    <label for="editar-nombre" class="form-label">Nombre</label>
                     <input type="text" id="editar-nombre" name="nombre" class="form-control" required>
                 </div>
-
                 <div class="form-group">
-                    <label for="editar-modalidad" class="form-label">Tipo de Destino</label>
-                    <select id="editar-modalidad" name="modalidad" class="form-control" required>
+                    <label for="editar-modalidad" class="form-label">Modalidad</label>
+                    <select id="editar-modalidad" name="modalidad" class="form-control">
                         <option value="Ruta">Ruta</option>
                         <option value="Tienda">Tienda</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label for="editar-estado" class="form-label">Estado</label>
-                    <select id="editar-estado" name="estado" class="form-control" required>
+                    <select id="editar-estado" name="estado" class="form-control">
                         <option value="Activo">Activo</option>
                         <option value="Inactivo">Inactivo</option>
                     </select>
@@ -154,67 +153,31 @@ try {
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const backdrop = document.getElementById('modal-backdrop');
+        function openModal(id) { document.getElementById(id).classList.add('open'); backdrop.classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); backdrop.classList.remove('open'); }
+
+        document.getElementById('btn-open-crear').addEventListener('click', () => openModal('modal-crear'));
         
-        function openModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.add('open');
-                backdrop.classList.add('open');
-            }
-        }
-
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('open');
-                backdrop.classList.remove('open');
-            }
-        }
-
-        document.getElementById('btn-open-crear').addEventListener('click', function() {
-            openModal('modal-crear');
-        });
-
-        const formEditar = document.getElementById('form-editar');
-        const inputNombre = document.getElementById('editar-nombre');
-        
-        // CAMBIO 4: Se actualiza la variable para reflejar que es un select
-        const selectModalidad = document.getElementById('editar-modalidad');
-        const selectEstado = document.getElementById('editar-estado');
-
-        document.querySelectorAll('.btn-open-editar').forEach(button => {
-            button.addEventListener('click', function() {
+        document.querySelectorAll('.btn-open-editar').forEach(btn => {
+            btn.addEventListener('click', function() {
                 const id = this.getAttribute('data-id');
-                const nombre = this.getAttribute('data-nombre');
-                const modalidad = this.getAttribute('data-modalidad'); // Sigue usando data-modalidad
-                const estado = this.getAttribute('data-estado');
-
-                // APUNTA AL BACKEND DE EDITAR CON EL ID CORRECTO
-                formEditar.action = `/liberty/app/db/functions/destino/editar.php?id=${id}`;
-                inputNombre.value = nombre;
-                
-                // CAMBIO 5: Se asigna el valor al select en lugar del input
-                selectModalidad.value = modalidad; 
-                selectEstado.value = estado;
-
+                document.getElementById('form-editar').action = `/liberty/app/db/functions/destino/editar.php?id=${id}`;
+                document.getElementById('editar-nombre').value = this.getAttribute('data-nombre');
+                document.getElementById('editar-modalidad').value = this.getAttribute('data-modalidad');
+                document.getElementById('editar-estado').value = this.getAttribute('data-estado');
                 openModal('modal-editar');
             });
         });
 
-        document.querySelectorAll('.modal-close-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const modalId = this.getAttribute('data-modal-id');
-                closeModal(modalId);
-            });
+        document.querySelectorAll('.modal-close-btn').forEach(btn => {
+            btn.addEventListener('click', function() { closeModal(this.getAttribute('data-modal-id')); });
         });
 
-        backdrop.addEventListener('click', function() {
-            closeModal('modal-crear');
-            closeModal('modal-editar');
+        backdrop.addEventListener('click', () => {
+            document.querySelectorAll('.modal-content.open').forEach(m => closeModal(m.id));
         });
     });
     </script>
-    
     <script src="/liberty/app/assets/js/sidebar.js"></script>
 </body>
 </html>

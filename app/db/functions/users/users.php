@@ -120,15 +120,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
                 $contraseña_plana = trim($_POST['contraseña']);
                 $turno = (int) $_POST['turno'];
                 $rol_id = (int) $_POST['rol_id'];
-                $estado = trim($_POST['estado']); // Asumimos que recibes 1 o 0
+                $estado = trim($_POST['estado']);
 
                 if (empty($nombre) || empty($apellido) || empty($correo) || empty($contraseña_plana)) {
                     $_SESSION['user_error'] = 'Error: Campos básicos vacíos.';
                 } else {
                     $hash_contraseña = password_hash($contraseña_plana, PASSWORD_DEFAULT);
-                    $stmt = $conn->prepare("INSERT INTO usuario (nombre, apellido, correo, contraseña, turno, rol_id, estado) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    
+                    // MODIFICACIÓN: Insertamos '1' en requiere_cambio
+                    $stmt = $conn->prepare("INSERT INTO usuario (nombre, apellido, correo, contraseña, turno, rol_id, estado, requiere_cambio) VALUES (?, ?, ?, ?, ?, ?, ?, 1)");
                     $stmt->execute([$nombre, $apellido, $correo, $hash_contraseña, $turno, $rol_id, $estado]);
-                    $_SESSION['user_message'] = '¡Usuario creado exitosamente!';
+                    
+                    $_SESSION['user_message'] = '¡Usuario creado! Deberá cambiar su contraseña al ingresar.';
                 }
                 break;
 

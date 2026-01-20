@@ -6,26 +6,46 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit;
 }
 
-// Incluir la conexión a la base de datos (PDO)
-// $conn (objeto PDO) se define aquí
-include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php'); 
-
-// Incluir funciones de usuario (si aún se necesitan aquí)
-// --- CORREGIDO: Faltaba un '.' (punto) de concatenación ---
-include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/functions/users/users.php');
-
-// --- NUEVO: Incluir funciones de estadísticas del dashboard (versión PDO) ---
+// 1. Incluir Archivos
+include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php');
 include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/functions/dashboard/stats.php');
 
-// --- NUEVO: Obtener las estadísticas ---
-// Estas funciones ahora reciben el objeto PDO $conn
-$paquetesHoy = getPaquetesRegistradosHoy($conn);
-$paquetesSede = getPaquetesEnSede($conn);
+// 2. Obtener Datos y Calcular Tendencias
 
-// NOTA: Con PDO, no es estrictamente necesario cerrar la conexión 
-// manualmente (se cierra al final del script), pero si quisieras, 
-// se hace asignando null:
-// $conn = null;
+// --- KPI 1: INGRESOS (Comparativa Hoy vs Ayer) ---
+$ingresosHoy = getIngresosHoy($conn);
+$ingresosAyer = getIngresosAyer($conn);
+$tendenciaIngresos = calcularTendencia($ingresosHoy, $ingresosAyer);
+// Determinar clase y flecha
+$claseTendenciaIng = ($tendenciaIngresos >= 0) ? 'trend-up' : 'trend-down';
+$iconoTendenciaIng = ($tendenciaIngresos >= 0) ? 'fa-arrow-up' : 'fa-arrow-down';
+$textoTendenciaIng = ($tendenciaIngresos >= 0) ? '+' . $tendenciaIngresos . '%' : $tendenciaIngresos . '%';
+
+
+// --- KPI 2: EN ALMACÉN (Capacidad Operativa) ---
+$enSede = getPaquetesEnSede($conn);
+$totalActivos = getTotalPaquetesActivos($conn);
+// Calculamos qué porcentaje del total de paquetes está estancado en sede
+$porcentajeOcupacion = ($totalActivos > 0) ? round(($enSede / $totalActivos) * 100) : 0;
+
+
+// --- KPI 3: EN RUTA (Actividad) ---
+$enRuta = getPaquetesEnRuta($conn);
+// Simplemente mostramos el número activo.
+
+
+// --- KPI 4: ENTREGADOS (Comparativa Mes vs Mes Anterior) ---
+$entregadosMes = getEntregadosEsteMes($conn);
+$entregadosMesAnt = getEntregadosMesAnterior($conn);
+$tendenciaEntregas = calcularTendencia($entregadosMes, $entregadosMesAnt);
+// Determinar clase y flecha
+$claseTendenciaEnt = ($tendenciaEntregas >= 0) ? 'trend-up' : 'trend-down';
+$iconoTendenciaEnt = ($tendenciaEntregas >= 0) ? 'fa-arrow-up' : 'fa-arrow-down';
+$textoTendenciaEnt = ($tendenciaEntregas >= 0) ? '+' . $tendenciaEntregas . '%' : $tendenciaEntregas . '%';
+
+
+// Datos de usuario
+$nombreUsuario = $_SESSION['user_nombre'] ?? 'Usuario';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -34,10 +54,10 @@ $paquetesSede = getPaquetesEnSede($conn);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liberty Express - Dashboard</title>
-    <link rel="stylesheet" href="/liberty/app/assets/css/usuario.css">
+    <link rel="stylesheet" href="/liberty/app/assets/css/sidebar.css">
     <link rel="stylesheet" href="/liberty/app/assets/css/dashboard.css">
-    <!-- Asegúrate de tener Font Awesome si usas los iconos fas fa- -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -48,107 +68,113 @@ $paquetesSede = getPaquetesEnSede($conn);
 
         <main class="main-content">
 
-            <section class="welcome-box" aria-live="polite">
-                <h1 id='welcome-title'>¡Bienvenido a Liberty Express!</h1>
-                <p>Gestiona envíos, registra nuevos paquetes y consulta su estado desde el panel de control.</p>
+            <section class="welcome-box">
+                <h1>Hola, <?php echo htmlspecialchars($nombreUsuario); ?> 👋</h1>
+                <p>Aquí tienes el resumen de operaciones en tiempo real.</p>
             </section>
 
-            <div class="container-fluid py-2">
-                <div class="row dashboard-stack">
-
-                    <!-- Tarjeta Paquetes Registrados Hoy -->
-                    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-                        <div class="card">
-                            <div class="card-header p-2 ps-3">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <p class="text-sm mb-0 text-capitalize">Paquetes Registrados Hoy</p>
-                                        <!-- MODIFICADO: Se imprime la variable PHP -->
-                                        <h4 class="mb-0"><?php echo $paquetesHoy; ?></h4>
-                                    </div>
-                                    <div
-                                        class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
-                                        <i class="fas fa-box"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr class="dark horizontal my-0">
-                            <div class="card-footer p-2 ps-3">
-                                <!-- Nota: Este porcentaje aún es estático -->
-                                <p class="mb-0 text-sm"><span class="text-success font-weight-bolder">+55% </span>que la
-                                    semana
-                                    pasada</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tarjeta Paquetes en Sede -->
-                    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-                        <div class="card">
-                            <div class="card-header p-2 ps-3">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <p class="text-sm mb-0 text-capitalize">Paquetes en Sede</p>
-                                        <!-- MODIFICADO: Se imprime la variable PHP -->
-                                        <h4 class="mb-0"><?php echo $paquetesSede; ?></h4>
-                                    </div>
-                                    <div
-                                        class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
-                                        <i class="fas fa-warehouse"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr class="dark horizontal my-0">
-                            <div class="card-footer p-2 ps-3">
-                                <!-- Nota: Este porcentaje aún es estático -->
-                                <p class="mb-0 text-sm"><span class="text-danger font-weight-bolder">-2% </span>que ayer
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tarjeta Foro de Usuarios -->
-                    <div class="col-xl-6 col-sm-12 mb-4">
-                        <div class="card forum-card">
-                            <div class="card-header">
-                                <h4 class="mb-0">Foro de usuarios</h4>
-                                <p class="text-sm mb-0">Comparte novedades, dudas o avisos</p>
-                            </div>
-
-                            <div class="card-body">
-                                <div class="posts" id="postsList">
-                                    <div class="post">
-                                        <div class="post-meta"><strong>Ana</strong> · <span class="time">2h</span></div>
-                                        <div class="post-body">¿Alguien conoce el horario de recepción de paquetes para
-                                            hoy?
-                                        </div>
-                                    </div>
-
-                                    <div class="post">
-                                        <div class="post-meta"><strong>Carlos</strong> · <span class="time">5h</span>
-                                        </div>
-                                        <div class="post-body">Recordatorio: mañana habrá corte de energía en la sede.
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <form class="post-form" onsubmit="return false;" id="forumForm">
-                                    <textarea name="content" rows="3" class="form-input"
-                                        placeholder="Escribe una publicación..."></textarea>
-                                    <div class="form-actions">
-                                        <button class="btn-post" id="btnPost">Publicar</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
+            <div class="dashboard-grid" style="padding-bottom: 1rem; gap: 1rem;">
+                <div class="quick-actions">
+                    <a href="/liberty/paquetes/gestion.php" class="action-btn">
+                        <i class="fas fa-box-open"></i> Registrar Paquete
+                    </a>
+                    <a href="/liberty/paquetes/gestion.php" class="action-btn">
+                        <i class="fas fa-search"></i> Buscar Envío
+                    </a>
+                    <a href="/liberty/paquetes/informe.php" class="action-btn">
+                        <i class="fas fa-file-alt"></i> Ver Informes
+                    </a>
                 </div>
             </div>
 
+            <div class="dashboard-grid">
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h4 class="stat-title">Registros Hoy</h4>
+                        <div class="stat-icon icon-primary">
+                            <i class="fas fa-calendar-plus"></i>
+                        </div>
+                    </div>
+                    <h2 class="stat-value"><?php echo $ingresosHoy; ?></h2>
+                    <div class="stat-footer">
+                        <span class="<?php echo $claseTendenciaIng; ?>">
+                            <i class="fas <?php echo $iconoTendenciaIng; ?>"></i> <?php echo $textoTendenciaIng; ?>
+                        </span> 
+                        <span class="text-gray">vs ayer (<?php echo $ingresosAyer; ?>)</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h4 class="stat-title">En Sede</h4>
+                        <div class="stat-icon icon-blue">
+                            <i class="fas fa-warehouse"></i>
+                        </div>
+                    </div>
+                    <h2 class="stat-value"><?php echo $enSede; ?></h2>
+                    <div class="stat-footer">
+                        <span class="text-gray"><?php echo $porcentajeOcupacion; ?>% de la carga activa total</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h4 class="stat-title">En Tránsito</h4>
+                        <div class="stat-icon icon-orange">
+                            <i class="fas fa-truck-fast"></i>
+                        </div>
+                    </div>
+                    <h2 class="stat-value"><?php echo $enRuta; ?></h2> 
+                    <div class="stat-footer">
+                        <span class="text-gray">Despachos activos ahora</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h4 class="stat-title">Entregas (Mes)</h4>
+                        <div class="stat-icon icon-green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <h2 class="stat-value"><?php echo $entregadosMes; ?></h2>
+                    <div class="stat-footer">
+                        <span class="<?php echo $claseTendenciaEnt; ?>">
+                            <i class="fas <?php echo $iconoTendenciaEnt; ?>"></i> <?php echo $textoTendenciaEnt; ?>
+                        </span>
+                        <span class="text-gray">vs mes anterior</span>
+                    </div>
+                </div>
+
+                <div class="forum-card" style="grid-column: span 12;">
+                    <div class="card-header">
+                        <h3><i class="fas fa-bullhorn"></i> Novedades Operativas</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="posts">
+                            <div class="post">
+                                <div class="post-header">
+                                    <strong>Sistema Automático</strong>
+                                    <span>Hoy</span>
+                                </div>
+                                <div class="post-body">
+                                    Las estadísticas del dashboard se han actualizado correctamente. Los porcentajes reflejan la actividad en tiempo real comparada con el periodo anterior.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form class="post-form" onsubmit="alert('Función de postear en desarrollo'); return false;">
+                            <textarea name="content" rows="2" placeholder="Escribe una novedad..."></textarea>
+                            <button class="btn-post">Publicar</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
         </main>
     </div>
+    
     <script src="/liberty/app/assets/js/sidebar.js"></script>
 </body>
-
 </html>

@@ -17,7 +17,6 @@ $contraseña_ingresada = trim($_POST['contraseña']);
 // Validar que no estén vacíos
 if (empty($correo) || empty($contraseña_ingresada)) {
     $_SESSION['login_error'] = 'Por favor, ingresa correo y contraseña.';
-    // Redirigir de vuelta al formulario
     header("Location:  /liberty/login.php");
     exit;
 }
@@ -28,36 +27,40 @@ try {
     $sentencia->execute([$correo]);
     $usuario = $sentencia->fetch(PDO::FETCH_OBJ);
 
-
     // 2. Verifica si el usuario existe Y SI LA CONTRASEÑA ES CORRECTA
     if ($usuario && password_verify($contraseña_ingresada, $usuario->contraseña)) {
-        // 3. La contraseña es correcta. Ahora verifica el estado y rol.
+        
+        // 3. Verificar estado activo
         if ($usuario->estado == 1) {
             unset($_SESSION['login_error']);
             
-            // Guarda los datos del usuario en la sesión para usarlos en otras páginas
+            // Guardar datos en sesión
             $_SESSION['user_id'] = $usuario->id;
             $_SESSION['user_nombre'] = $usuario->nombre; 
             $_SESSION['user_apellido'] = $usuario->apellido; 
             $_SESSION['user_rol'] = $usuario->rol_id;
             $_SESSION['logged_in'] = true;
 
-            // Regenera el ID de sesión para prevenir "Session Fixation"
+            // Regenerar ID por seguridad
             session_regenerate_id(true);
 
-            // Redirige al panel principal
+            // --- NUEVA LÓGICA DE SEGURIDAD ---
+            // Si requiere cambio, lo enviamos a la pantalla de cambio
+            if ($usuario->requiere_cambio == 1) {
+                header("Location: /liberty/cambiar_clave.php");
+                exit;
+            }
+
+            // Si todo está normal, al Dashboard
             header("Location: /liberty/"); 
             exit;
 
         } else {
-            // El usuario existe y la contraseña es correcta, pero está inactivo o no es admin
-            $_SESSION['login_error'] = 'Tu cuenta está inactiva o no tienes permisos para ingresar.';
+            $_SESSION['login_error'] = 'Tu cuenta está inactiva o no tienes permisos.';
             header("Location: /liberty/login.php");
             exit;
         }
     } else {
-        // El usuario no existe O la contraseña es incorrecta
-        // Damos un mensaje genérico por seguridad
         $_SESSION['login_error'] = 'Usuario o contraseña incorrectos.';
         header("Location: /liberty/login.php");
         exit;

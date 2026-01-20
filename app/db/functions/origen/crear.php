@@ -1,20 +1,24 @@
 <?php
 session_start();
 include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php');
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nombre = $_POST['nombre'] ?? '';
+    $estado = $_POST['estado'] ?? 'Activo'; // Recibimos el estado
+
     if (empty($nombre)) {
         $_SESSION['mensaje'] = ['tipo' => 'error', 'texto' => 'Error: El nombre es obligatorio.'];
     } else {
         try {
-            $stmt = $conn->prepare("INSERT INTO Origen (Nombre) VALUES (?)");
-            $stmt->execute([$nombre]);
+            // Insertamos nombre Y estado
+            $stmt = $conn->prepare("INSERT INTO Origen (Nombre, Estado) VALUES (?, ?)");
+            $stmt->execute([$nombre, $estado]);
             $_SESSION['mensaje'] = ['tipo' => 'exito', 'texto' => 'Origen registrado con éxito.'];
         } catch (PDOException $e) {
             $_SESSION['mensaje'] = ['tipo' => 'error', 'texto' => 'Error al registrar el origen: ' . $e->getMessage()];
         }
     }
 }
-header('Location: /liberty/gestion_origenes.php'); // Redirige al UI de Orígenes
+header('Location: /liberty/gestion_origenes.php');
 exit;
 ?>

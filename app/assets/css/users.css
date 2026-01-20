@@ -1,316 +1,140 @@
-/* --- Estilos Generales --- */
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f7f6;
-    margin: 0;
-    padding: 0;
+:root {
+    --primary: #500101;
+    --text-dark: #1e293b;
+    --text-gray: #64748b;
+    --bg-body: #f1f5f9;
+    --white: #ffffff;
+    --radius: 12px;
 }
 
-/* --- Contenedor Principal --- */
+body {
+    font-family: 'Poppins', sans-serif; /* Asegurando consistencia */
+    background-color: var(--bg-body);
+    margin: 0;
+}
+
+/* Usamos las mismas variables que el dashboard para layout */
 .main-content {
-    margin-left: 250px; /* Ancho de tu barra lateral */
-    padding: 30px;
+    margin-left: 240px; /* Coincide con sidebar */
+    padding: 20px;
     transition: margin-left 0.3s ease;
 }
 
-/* --- Cabecera --- */
+/* Header Idéntico a tables.css */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap; 
-    gap: 15px;
+    margin-bottom: 1.5rem;
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .header h1 {
-    color: #333;
+    color: var(--primary);
+    font-size: 1.5rem;
     margin: 0;
-    font-size: 28px;
+    font-weight: 700;
 }
 
-/* --- Botones --- */
-.btn {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    text-decoration: none;
-    display: inline-flex; 
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.btn:hover {
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-}
-
+/* Botón Primario Moderno */
 .btn-primary {
-    background-color: #007bff;
+    background-color: var(--primary);
     color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
 }
-.btn-primary:hover {
-    background-color: #0069d9;
-}
+.btn-primary:hover { background-color: #7a1e1e; }
 
-.btn-warning {
-    background-color: #ffc107;
-    color: #333;
-}
-.btn-warning:hover {
-    background-color: #e0a800;
-}
+/* Barra de búsqueda integrada */
 
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
-.btn-danger:hover {
-    background-color: #c82333;
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-.btn-secondary:hover {
-    background-color: #5a6268;
-}
-
-
-/* --- Alertas de Mensajes --- */
-.alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    border: 1px solid transparent;
-    border-radius: 5px;
-}
-.alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-}
-.alert-danger {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-}
-
-
-/* --- Barra de Búsqueda --- */
 .search-bar {
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
+    max-width: 100%; /* Asegura que el contenedor no se desborde */
 }
 
 .search-bar input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    width: 99%;
+    margin: auto;
+    padding: 0.8rem 1rem; /* Padding original */
+    /* Importante: box-sizing hace que el width 100% incluya el padding */
     box-sizing: border-box; 
-    font-size: 16px;
-}
-
-/* --- Contenedor de Tabla --- */
-.table-container {
-    overflow-x: auto;
-    background-color: #fff;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    display: block; /* Asegura comportamiento de bloque */
 }
 
-/* --- Tabla --- */
+.search-bar input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(80, 1, 1, 0.1);
+}
+
+/* Tabla Unificada */
+.table-container {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    overflow: hidden; /* Para bordes redondeados */
+}
+
 .content-table {
     width: 100%;
     border-collapse: collapse;
-    background-color: #fff;
-    min-width: 800px; 
+    font-size: 0.9rem;
 }
 
 .content-table thead tr {
-    background-color: #343a40; 
-    color: #ffffff;
+    background-color: #f8fafc;
+    color: var(--text-dark);
     text-align: left;
+    font-weight: 600;
 }
 
-.content-table th,
-.content-table td {
-    padding: 12px 15px;
-    vertical-align: middle;
-}
-
-.content-table tbody tr {
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.content-table tbody tr:last-of-type {
-    border-bottom: none;
+.content-table th, .content-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
 }
 
 .content-table tbody tr:hover {
-    background-color: #f9f9f9;
+    background-color: #fff1f2;
 }
 
-/* --- Badges de Estado/Rol --- */
+/* Badges (reutilizando estilo moderno) */
 .badge {
-    padding: 5px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
 }
+.badge-success { background-color: #d1fae5; color: #065f46; } /* Activo - Verde */
+.badge-danger { background-color: #fee2e2; color: #991b1b; } /* Inactivo - Rojo */
+.badge-info { background-color: #dbeafe; color: #1e40af; } /* Roles - Azul */
 
-.badge-success {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.badge-danger {
-    background-color: #f8d7da;
-    color: #721c24;
-}
- 
-.badge-info {
-    background-color: #d1ecf1;
-    color: #0c5460;
-}
-
+/* Acciones */
 .actions-cell {
     display: flex;
-    gap: 5px; 
+    gap: 0.5rem;
 }
+.btn { border: none; cursor: pointer; padding: 0.4rem; border-radius: 6px; transition: 0.2s; }
+.btn svg { width: 18px; height: 18px; }
 
-/* --- Estilos de Modales --- */
-.modal {
-    display: none; 
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.5); 
-    animation: fadeIn 0.3s ease;
-}
+.btn-warning { background: rgba(245, 158, 11, 0.1); }
+.btn-warning:hover { background: #f59e0b; }
+.btn-warning svg path { stroke: #d97706; }
+.btn-warning:hover svg path { stroke: white; }
 
-.modal-content {
-    background-color: #fefefe;
-    margin: 3% auto; 
-    padding: 25px 30px;
-    border: 1px solid #888;
-    width: 90%;
-    max-width: 500px;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    animation: slideIn 0.3s ease;
-}
-
-/* Animaciones de Modal */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-@keyframes slideIn {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-}
-
-.modal-header h2 {
-    margin: 0;
-    color: #333;
-}
-
-.close-btn {
-    color: #aaa;
-    font-size: 30px;
-    font-weight: bold;
-    cursor: pointer;
-    line-height: 1;
-}
-
-.close-btn:hover,
-.close-btn:focus {
-    color: black;
-}
-
-/* --- Estilos de Formularios en Modal --- */
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #555;
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; 
-    font-size: 14px;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    border-color: #007bff;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-}
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 25px;
-}
-
-/* --- Iconos SVG --- */
-.icon-edit, .icon-delete {
-    width: 16px;
-    height: 16px;
-    vertical-align: middle;
-}
-.btn-warning .icon-edit path {
-    stroke: #333;
-}
-.btn-danger .icon-delete path {
-    stroke: white;
-}
-
-/* --- Responsividad --- */
-@media (max-width: 768px) {
-    .main-content {
-        margin-left: 0; 
-        padding: 15px;
-    }
-    .header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .modal-content {
-        margin: 5% auto; 
-        width: 95%;
-    }
-}
-
+.btn-danger { background: rgba(239, 68, 68, 0.1); }
+.btn-danger:hover { background: #ef4444; }
+.btn-danger svg path { stroke: #ef4444; }
+.btn-danger:hover svg path { stroke: white; }

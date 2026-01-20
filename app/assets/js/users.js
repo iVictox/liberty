@@ -1,109 +1,99 @@
-// Espera a que todo el contenido del DOM esté cargado
-document.addEventListener('DOMContentLoaded', function() {
+// app/assets/js/users.js
 
-    // --- Funciones de Modales ---
+document.addEventListener('DOMContentLoaded', function() {
     
-    // Función global para abrir modal (para que los 'onclick' funcionen)
+    const backdrop = document.getElementById('modal-backdrop');
+
+    // --- FUNCIONES GLOBALES PARA ABRIR/CERRAR ---
+    
     window.abrirModal = function(idModal) {
         const modal = document.getElementById(idModal);
         if (modal) {
-            modal.style.display = 'block';
+            modal.classList.add('open');
+            if(backdrop) backdrop.classList.add('open');
         }
     }
 
-    // Función global para cerrar modal
     window.cerrarModal = function(idModal) {
         const modal = document.getElementById(idModal);
         if (modal) {
-            modal.style.display = 'none';
+            modal.classList.remove('open');
+            if(backdrop) backdrop.classList.remove('open');
         }
     }
 
-    // Cierra el modal si se hace clic fuera del contenido
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = 'none';
-        }
+    // Cerrar al hacer clic en el fondo oscuro
+    if (backdrop) {
+        backdrop.addEventListener('click', function() {
+            document.querySelectorAll('.modal.open, .modal-content.open').forEach(modal => {
+                // Identificar si es un modal clase antigua (.modal) o nueva (.modal-content)
+                // En users.php usamos IDs, así que pasamos el ID a cerrarModal
+                cerrarModal(modal.id);
+            });
+        });
     }
 
-    // --- Funcionalidad Específica ---
-
-    // Pre-rellenar modal de EDITAR
+    // --- LÓGICA DE EDICIÓN (Pre-rellenar datos) ---
     window.abrirModalEditar = function(boton) {
         try {
-            // Rellenar el formulario con los datos del botón (dataset)
-            document.getElementById('editarId').value = boton.dataset.id;
-            document.getElementById('editarNombre').value = boton.dataset.nombre;
-            document.getElementById('editarApellido').value = boton.dataset.apellido;
-            document.getElementById('editarCorreo').value = boton.dataset.correo;
-            document.getElementById('editarTurno').value = boton.dataset.turno;
-            document.getElementById('editarRol').value = boton.dataset.rol;
-            document.getElementById('editarEstado').value = boton.dataset.estado;
+            // Rellenar el formulario
+            document.getElementById('editarId').value = boton.getAttribute('data-id');
+            document.getElementById('editarNombre').value = boton.getAttribute('data-nombre');
+            document.getElementById('editarApellido').value = boton.getAttribute('data-apellido');
+            document.getElementById('editarCorreo').value = boton.getAttribute('data-correo');
+            document.getElementById('editarTurno').value = boton.getAttribute('data-turno');
+            document.getElementById('editarRol').value = boton.getAttribute('data-rol');
+            document.getElementById('editarEstado').value = boton.getAttribute('data-estado');
 
-            // Limpiar campo de contraseña
+            // Limpiar contraseña
             document.getElementById('editarContraseña').value = '';
 
-            // Abrir el modal
+            // Abrir
             abrirModal('modalEditar');
         } catch (e) {
-            console.error("Error al rellenar el modal de edición:", e);
+            console.error("Error al rellenar modal editar:", e);
         }
     }
 
-    // Pre-rellenar modal de ELIMINAR
+    // --- LÓGICA DE ELIMINACIÓN ---
     window.abrirModalEliminar = function(idUsuario) {
         try {
-            // Rellenar el ID en el formulario oculto
             document.getElementById('eliminarId').value = idUsuario;
-            
-            // Abrir el modal
             abrirModal('modalEliminar');
         } catch (e) {
-            console.error("Error al rellenar el modal de eliminación:", e);
+            console.error("Error al rellenar modal eliminar:", e);
         }
     }
 
-    // --- Función de Búsqueda ---
+    // --- BUSCADOR EN TABLA ---
     window.buscarTabla = function() {
-        var input, filtro, tabla, tr, td, i, j, textoCelda;
+        var input, filtro, tabla, tr, td, i, j, txtValue;
         input = document.getElementById("buscador");
         filtro = input.value.toUpperCase();
         tabla = document.getElementById("tablaUsuarios");
-        
-        if (!tabla) return; 
-        
         tr = tabla.getElementsByTagName("tr");
 
-        // Recorre todas las filas del cuerpo de la tabla (tbody)
-        for (i = 0; i < tr.length; i++) {
-            // Ignorar la fila de cabecera (thead)
-            if (tr[i].getElementsByTagName("th").length > 0) continue;
-
-            tr[i].style.display = "none"; // Ocultar fila por defecto
-            
+        for (i = 1; i < tr.length; i++) { // Empezar en 1 para saltar encabezado
+            tr[i].style.display = "none";
             td = tr[i].getElementsByTagName("td");
-            
             for (j = 0; j < td.length; j++) {
-                // No buscar en la última celda (la de acciones)
-                if (td[j] && j < (td.length - 1)) { 
-                    textoCelda = td[j].textContent || td[j].innerText;
-                    if (textoCelda.toUpperCase().indexOf(filtro) > -1) {
-                        tr[i].style.display = ""; 
-                        break; 
+                if (td[j]) {
+                    txtValue = td[j].textContent || td[j].innerText;
+                    if (txtValue.toUpperCase().indexOf(filtro) > -1) {
+                        tr[i].style.display = "";
+                        break;
                     }
                 }
             }
         }
     }
 
-    // Cerrar alertas de mensajes después de 5 segundos
+    // Ocultar alertas automáticamente
     setTimeout(() => {
-        const alertas = document.querySelectorAll('.alert');
+        const alertas = document.querySelectorAll('.mensaje');
         alertas.forEach(alerta => {
-            alerta.style.transition = 'opacity 0.5s ease';
             alerta.style.opacity = '0';
             setTimeout(() => alerta.remove(), 500);
         });
     }, 5000);
-
 });

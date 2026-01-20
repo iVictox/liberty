@@ -5,6 +5,7 @@ $mensaje = $_SESSION['mensaje'] ?? null;
 unset($_SESSION['mensaje']);
 
 try {
+    // Obtenemos todos los campos, incluyendo Estado
     $stmt = $conn->query("SELECT * FROM Origen ORDER BY Nombre ASC");
     $origenes = $stmt->fetchAll(PDO::FETCH_OBJ);
 } catch (PDOException $e) {
@@ -41,28 +42,33 @@ try {
                             <tr>
                                 <th>ID</th>
                                 <th>Nombre</th>
+                                <th>Estado</th> <!-- Nueva Columna -->
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($origenes)): ?>
-                                <tr><td colspan="3">No hay orígenes registrados.</td></tr>
+                                <tr><td colspan="4">No hay orígenes registrados.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($origenes as $origen): ?>
                                     <tr>
                                         <td><?php echo $origen->Origen_id; ?></td>
                                         <td><?php echo htmlspecialchars($origen->Nombre); ?></td>
                                         <td>
+                                            <!-- Badge simple para el estado -->
+                                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #fff; background-color: <?php echo $origen->Estado == 'Activo' ? '#28a745' : '#6c757d'; ?>;">
+                                                <?php echo htmlspecialchars($origen->Estado); ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <!-- Pasamos data-estado al botón -->
                                             <button class="btn-action edit btn-open-editar" 
                                                     data-id="<?php echo $origen->Origen_id; ?>"
-                                                    data-nombre="<?php echo htmlspecialchars($origen->Nombre); ?>">
+                                                    data-nombre="<?php echo htmlspecialchars($origen->Nombre); ?>"
+                                                    data-estado="<?php echo htmlspecialchars($origen->Estado); ?>">
                                                 Editar
                                             </button>
-                                            <a href="/liberty/app/db/functions/origen/eliminar.php?id=<?php echo $origen->Origen_id; ?>" 
-                                               class="btn-action delete" 
-                                               onclick="return confirm('¿Está seguro de que desea eliminar este origen?');">
-                                                Eliminar
-                                            </a>
+                                            
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -87,6 +93,14 @@ try {
                     <label for="crear-nombre" class="form-label">Nombre del Origen</label>
                     <input type="text" id="crear-nombre" name="nombre" class="form-control" placeholder="Ej: Miami" required>
                 </div>
+                <!-- Selector de Estado -->
+                <div class="form-group">
+                    <label for="crear-estado" class="form-label">Estado</label>
+                    <select id="crear-estado" name="estado" class="form-control" required>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-submit">Registrar</button>
                 </div>
@@ -105,6 +119,14 @@ try {
                 <div class="form-group">
                     <label for="editar-nombre" class="form-label">Nombre del Origen</label>
                     <input type="text" id="editar-nombre" name="nombre" class="form-control" required>
+                </div>
+                <!-- Selector de Estado -->
+                <div class="form-group">
+                    <label for="editar-estado" class="form-label">Estado</label>
+                    <select id="editar-estado" name="estado" class="form-control" required>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-submit">Actualizar</button>
@@ -127,35 +149,42 @@ try {
             backdrop.classList.remove('open');
         }
 
+        // Abrir modal crear
         document.getElementById('btn-open-crear').addEventListener('click', () => openModal('modal-crear'));
 
+        // Elementos del modal editar
         const formEditar = document.getElementById('form-editar');
         const inputNombre = document.getElementById('editar-nombre');
+        const selectEstado = document.getElementById('editar-estado');
 
+        // Abrir modal editar y rellenar datos
         document.querySelectorAll('.btn-open-editar').forEach(button => {
             button.addEventListener('click', function() {
                 const id = this.getAttribute('data-id');
                 const nombre = this.getAttribute('data-nombre');
+                const estado = this.getAttribute('data-estado'); // Recoger estado
                 
                 formEditar.action = `/liberty/app/db/functions/origen/editar.php?id=${id}`;
                 inputNombre.value = nombre;
+                selectEstado.value = estado; // Seleccionar el estado correcto
+                
                 openModal('modal-editar');
             });
         });
 
+        // Cerrar modales con la X
         document.querySelectorAll('.modal-close-btn').forEach(button => {
             button.addEventListener('click', function() {
                 closeModal(this.getAttribute('data-modal-id'));
             });
         });
 
+        // Cerrar al hacer click fuera
         backdrop.addEventListener('click', () => {
             closeModal('modal-crear');
             closeModal('modal-editar');
         });
     });
     </script>
-
-    <script src="/liberty/app/assets/js/sidebar.js"></script>
 </body>
 </html>

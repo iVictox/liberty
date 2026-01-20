@@ -1,25 +1,31 @@
 <?php
 session_start();
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: /login.php');
+    header('Location: /liberty/login.php');
     exit;
 }
 
 include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php');
 
 // --- LÓGICA DE BÚSQUEDA (BACKEND) ---
-// Detectamos si hay una búsqueda activa (ya sea por carga normal o AJAX)
 $buscar = $_GET['buscar'] ?? '';
-$es_ajax = isset($_GET['ajax_mode']); // Bandera para saber si pide solo filas
+$es_ajax = isset($_GET['ajax_mode']); 
 
+// Consulta Principal Actualizada: Traemos datos del Usuario y el Estado del paquete
 $sql = "
     SELECT 
         p.Codigo, 
         p.Fecha_Registro, 
-        p.Status,
+        p.Status, 
+        p.Estado,
+        p.Tipo_Destino_ID,
+        p.Origen_id,
+        p.Destino_id,
         o.Nombre AS OrigenNombre,
         d.Nombre AS DestinoNombre,
-        d.Modalidad AS DestinoModalidad
+        d.Modalidad AS DestinoModalidad,
+        u.nombre AS UserNombre,
+        u.apellido AS UserApellido
     FROM 
         Paquete p
     JOIN 
@@ -34,14 +40,16 @@ $params = [];
 if (!empty($buscar)) {
     $sql .= "
     WHERE 
-        p.Codigo LIKE ? OR 
+        (p.Codigo LIKE ? OR 
         o.Nombre LIKE ? OR 
         d.Nombre LIKE ? OR
         p.Status LIKE ? OR
-        d.Modalidad LIKE ? 
+        u.nombre LIKE ? OR
+        u.apellido LIKE ?)
     ";
+    // Buscamos también por nombre de usuario
     $like_term = '%' . $buscar . '%';
-    $params = [$like_term, $like_term, $like_term, $like_term, $like_term];
+    $params = [$like_term, $like_term, $like_term, $like_term, $like_term, $like_term];
 }
 
 $sql .= " ORDER BY p.Fecha_Registro DESC";
@@ -55,49 +63,47 @@ try {
     die("Error al consultar datos: " . $e->getMessage());
 }
 
-// --- SI ES AJAX (BÚSQUEDA EN TIEMPO REAL) ---
-// Si Javascript llama a este archivo con ?ajax_mode=1, devolvemos SOLO las filas y cortamos.
+// --- SI ES AJAX (Devolver solo filas) ---
 if ($es_ajax) {
     if (empty($paquetes)) {
-        echo '<tr><td colspan="6">No hay paquetes que coincidan con "' . htmlspecialchars($buscar) . '".</td></tr>';
+        echo '<tr><td colspan="7" style="text-align:center; padding: 20px;">No se encontraron resultados.</td></tr>';
     } else {
         foreach ($paquetes as $paquete) {
-            // Lógica de visualización (repetida para ajax)
-            $status_limpio = strtolower($paquete->Status);
-            $status_limpio = str_replace([' ', 'ó'], ['', 'o'], $status_limpio);
+            // Estilos para fila inactiva
+            $filaStyle = ($paquete->Estado == 0) ? 'opacity: 0.6; background-color: #f1f5f9;' : '';
+            $status_limpio = strtolower(str_replace([' ', 'ó'], ['', 'o'], $paquete->Status));
             
-            echo '<tr class="filterable-row">';
-            echo '<td>' . htmlspecialchars($paquete->Codigo) . '</td>';
-            echo '<td>' . date('d/m/Y H:i', strtotime($paquete->Fecha_Registro)) . '</td>';
+            echo '<tr class="filterable-row" style="' . $filaStyle . '">';
+            echo '<td><strong>' . htmlspecialchars($paquete->Codigo) . '</strong>';
+            if($paquete->Estado == 0) echo '<br><span style="font-size:0.7em; color:red;">(Inactivo)</span>';
+            echo '</td>';
+            echo '<td>' . date('d/m/Y', strtotime($paquete->Fecha_Registro)) . '<br><small>' . date('H:i', strtotime($paquete->Fecha_Registro)) . '</small></td>';
+            echo '<td>' . htmlspecialchars($paquete->UserNombre . ' ' . $paquete->UserApellido) . '</td>';
             echo '<td>' . htmlspecialchars($paquete->OrigenNombre) . '</td>';
-            echo '<td>' . htmlspecialchars($paquete->DestinoNombre) . 
-                 '<span style="font-size: 0.8em; color: #555; display: block;">(' . htmlspecialchars($paquete->DestinoModalidad) . ')</span></td>';
+            echo '<td>' . htmlspecialchars($paquete->DestinoNombre) . '<div style="font-size: 0.75em; color: #64748b;">' . htmlspecialchars($paquete->DestinoModalidad) . '</div></td>';
             echo '<td><span class="status-badge status-' . $status_limpio . '">' . htmlspecialchars($paquete->Status) . '</span></td>';
             echo '<td>
                     <button class="btn-action edit btn-open-editar"
                         data-codigo="' . htmlspecialchars($paquete->Codigo) . '"
+                        data-origen="' . $paquete->Origen_id . '"
+                        data-tipo="' . htmlspecialchars($paquete->Tipo_Destino_ID) . '"
+                        data-destino="' . $paquete->Destino_id . '"
                         data-status="' . htmlspecialchars($paquete->Status) . '"
-                        data-modalidad="' . htmlspecialchars($paquete->DestinoModalidad) . '">
-                        Editar Status
-                    </button>
-                    <button class="btn-action delete btn-open-eliminar"
-                        data-codigo="' . htmlspecialchars($paquete->Codigo) . '">
-                        Eliminar
+                        data-estado="' . $paquete->Estado . '"
+                        title="Editar Paquete Completo">
+                        <i class="fas fa-edit"></i> Editar
                     </button>
                   </td>';
             echo '</tr>';
         }
     }
-    exit; // IMPORTANTE: Detener la ejecución aquí para no devolver el resto del HTML
+    exit; 
 }
 
-// --- CARGA NORMAL DE PÁGINA ---
-// Obtenemos listas para los modales (solo si es carga normal)
-$origenes_stmt = $conn->query("SELECT Origen_id, Nombre FROM Origen ORDER BY Nombre ASC");
-$origenes = $origenes_stmt->fetchAll(PDO::FETCH_OBJ);
-
-$destinos_stmt = $conn->query("SELECT Destino_id, Nombre, Modalidad FROM Destino WHERE Estado = 'Activo' ORDER BY Nombre ASC");
-$destinos = $destinos_stmt->fetchAll(PDO::FETCH_OBJ);
+// --- CARGA NORMAL ---
+// Listas para los selects
+$origenes = $conn->query("SELECT Origen_id, Nombre FROM Origen ORDER BY Nombre ASC")->fetchAll(PDO::FETCH_OBJ);
+$destinos = $conn->query("SELECT Destino_id, Nombre, Modalidad FROM Destino WHERE Estado = 'Activo' ORDER BY Nombre ASC")->fetchAll(PDO::FETCH_OBJ);
 
 $mensaje = $_SESSION['mensaje'] ?? null;
 unset($_SESSION['mensaje']);
@@ -111,26 +117,33 @@ unset($_SESSION['mensaje']);
     <link rel="stylesheet" href="/liberty/app/assets/css/tables.css"> 
     <link rel="stylesheet" href="/liberty/app/assets/css/forms.css">
     <link rel="stylesheet" href="/liberty/app/assets/css/modal.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="app-wrap">
         <?php include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/includes/menu.php'); ?>
         
         <main class="main-content">
+            <?php if ($mensaje): ?>
+                <div class="mensaje <?php echo $mensaje['tipo']; ?>">
+                    <?php echo htmlspecialchars($mensaje['texto']); ?>
+                </div>
+            <?php endif; ?>
+
             <div class="table-container">
                 <div class="table-header">
                     <h1>Gestión de Paquetes</h1>
-                    <button id="btn-open-crear" class="btn-primary">+ Registrar paquete</button>
+                    <button id="btn-open-crear" class="btn-primary">
+                        <i class="fas fa-plus"></i> Registrar Paquete
+                    </button>
                 </div>
 
-                <?php if ($mensaje): ?>
-                    <div class="mensaje <?php echo $mensaje['tipo']; ?>"><?php echo htmlspecialchars($mensaje['texto']); ?></div>
-                <?php endif; ?>
-
-                <div class="form-container" style="max-width: none; margin-bottom: 20px; padding: 0;">
-                    <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
-                        <input type="text" id="input-busqueda-realtime" class="form-control" placeholder="Escribe para buscar en tiempo real..." value="<?php echo htmlspecialchars($buscar); ?>" autocomplete="off">
-                    </div>
+                <div style="margin-bottom: 1.5rem; position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                    <input type="text" id="input-busqueda-realtime" class="form-control" 
+                           style="padding-left: 40px;" 
+                           placeholder="Buscar por código, usuario, origen..." 
+                           value="<?php echo htmlspecialchars($buscar); ?>" autocomplete="off">
                 </div>
 
                 <div class="table-responsive">
@@ -138,35 +151,44 @@ unset($_SESSION['mensaje']);
                         <thead>
                             <tr>
                                 <th>Código</th>
-                                <th>Fecha Registro</th>
-                                <th>Origen</th>
-                                <th>Destino (Tipo)</th>
+                                <th>Fecha</th>
+                                <th>Registrado Por</th> <th>Origen</th>
+                                <th>Destino</th>
                                 <th>Status</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tabla-resultados">
                             <?php if (empty($paquetes)): ?>
-                                <tr>
-                                    <td colspan="6">No hay paquetes registrados.</td>
-                                </tr>
+                                <tr><td colspan="7" style="text-align:center; padding: 20px;">No hay paquetes registrados.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($paquetes as $paquete): ?>
-                                    <tr class="filterable-row">
-                                        <td><?php echo htmlspecialchars($paquete->Codigo); ?></td>
-                                        <td><?php echo date('d/m/Y H:i', strtotime($paquete->Fecha_Registro)); ?></td>
+                                    <?php 
+                                        // Opacidad si está inactivo
+                                        $filaStyle = ($paquete->Estado == 0) ? 'opacity: 0.6; background-color: #f1f5f9;' : '';
+                                        $status_limpio = strtolower(str_replace([' ', 'ó'], ['', 'o'], $paquete->Status));
+                                    ?>
+                                    <tr class="filterable-row" style="<?php echo $filaStyle; ?>">
+                                        <td>
+                                            <strong><?php echo htmlspecialchars($paquete->Codigo); ?></strong>
+                                            <?php if($paquete->Estado == 0): ?>
+                                                <br><span style="font-size:0.7em; color:red;">(Inactivo)</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php echo date('d/m/Y', strtotime($paquete->Fecha_Registro)); ?><br>
+                                            <small><?php echo date('H:i', strtotime($paquete->Fecha_Registro)); ?></small>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($paquete->UserNombre . ' ' . $paquete->UserApellido); ?></td>
+                                        
                                         <td><?php echo htmlspecialchars($paquete->OrigenNombre); ?></td>
                                         <td>
                                             <?php echo htmlspecialchars($paquete->DestinoNombre); ?>
-                                            <span style="font-size: 0.8em; color: #555; display: block;">
-                                                (<?php echo htmlspecialchars($paquete->DestinoModalidad); ?>)
-                                            </span>
+                                            <div style="font-size: 0.75em; color: #64748b;">
+                                                <?php echo htmlspecialchars($paquete->DestinoModalidad); ?>
+                                            </div>
                                         </td>
                                         <td>
-                                            <?php
-                                                $status_limpio = strtolower($paquete->Status);
-                                                $status_limpio = str_replace([' ', 'ó'], ['', 'o'], $status_limpio);
-                                            ?>
                                             <span class="status-badge status-<?php echo $status_limpio; ?>">
                                                 <?php echo htmlspecialchars($paquete->Status); ?>
                                             </span>
@@ -174,13 +196,13 @@ unset($_SESSION['mensaje']);
                                         <td>
                                             <button class="btn-action edit btn-open-editar"
                                                 data-codigo="<?php echo htmlspecialchars($paquete->Codigo); ?>"
+                                                data-origen="<?php echo $paquete->Origen_id; ?>"
+                                                data-tipo="<?php echo htmlspecialchars($paquete->Tipo_Destino_ID); ?>"
+                                                data-destino="<?php echo $paquete->Destino_id; ?>"
                                                 data-status="<?php echo htmlspecialchars($paquete->Status); ?>"
-                                                data-modalidad="<?php echo htmlspecialchars($paquete->DestinoModalidad); ?>">
-                                                Editar Status
-                                            </button>
-                                            <button class="btn-action delete btn-open-eliminar"
-                                                data-codigo="<?php echo htmlspecialchars($paquete->Codigo); ?>">
-                                                Eliminar
+                                                data-estado="<?php echo $paquete->Estado; ?>"
+                                                title="Editar Paquete Completo">
+                                                <i class="fas fa-edit"></i> Editar
                                             </button>
                                         </td>
                                     </tr>
@@ -195,7 +217,7 @@ unset($_SESSION['mensaje']);
 
     <div class="modal-backdrop" id="modal-backdrop"></div>
 
-    <div class="modal-content" id="modal-crear" style="max-width: 600px;"> 
+    <div class="modal-content" id="modal-crear"> 
         <div class="modal-header">
             <h2>Registrar Paquetes</h2>
             <button class="modal-close-btn" data-modal-id="modal-crear">×</button>
@@ -203,11 +225,11 @@ unset($_SESSION['mensaje']);
         <div class="modal-body">
             <form action="/liberty/app/db/functions/paquetes/crear.php" method="POST" class="form-container" id="form-crear-lote">
                 <input type="hidden" name="paquetes_json" id="paquetes_json">
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                    <h3 style="font-size: 14px; color: #500101; margin-top:0;">Configuración de Ruta</h3>
-                    <div class="form-row" style="display: flex; gap: 10px;">
-                        <div class="form-group" style="flex: 1; margin-bottom: 10px;">
-                            <label for="origen_id" class="form-label" style="font-size:12px;">Origen</label>
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+                    <h3 style="font-size: 0.9rem; color: #500101; margin-top:0;">1. Configuración de Ruta</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group" style="margin:0;">
+                            <label for="origen_id" class="form-label">Origen</label>
                             <select id="origen_id" class="form-control">
                                 <option value="">-- Seleccione --</option>
                                 <?php foreach ($origenes as $origen): ?>
@@ -215,8 +237,8 @@ unset($_SESSION['mensaje']);
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="form-group" style="flex: 1; margin-bottom: 10px;">
-                            <label for="crear-tipo-destino" class="form-label" style="font-size:12px;">Tipo</label>
+                        <div class="form-group" style="margin:0;">
+                            <label for="crear-tipo-destino" class="form-label">Tipo</label>
                             <select id="crear-tipo-destino" class="form-control">
                                 <option value="">-- Seleccione --</option>
                                 <option value="Ruta">Ruta</option>
@@ -224,8 +246,8 @@ unset($_SESSION['mensaje']);
                             </select>
                         </div>
                     </div>
-                    <div class="form-group" style="margin-bottom: 5px;">
-                        <label for="destino_id" class="form-label" style="font-size:12px;">Destino</label>
+                    <div class="form-group" style="margin-top: 15px; margin-bottom:0;">
+                        <label for="destino_id" class="form-label">Destino Final</label>
                         <select id="destino_id" class="form-control" disabled>
                             <option value="">-- Primero seleccione tipo --</option>
                             <?php foreach ($destinos as $destino): ?>
@@ -236,36 +258,25 @@ unset($_SESSION['mensaje']);
                         </select>
                     </div>
                 </div>
-
-                <div style="border-top: 1px solid #eee; padding-top: 10px;">
-                    <h3 style="font-size: 14px; color: #500101; margin-top:0;">Agregar Paquetes</h3>
-                    <div class="form-group" style="display: flex; gap: 10px; align-items: flex-end;">
+                <div style="border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                    <h3 style="font-size: 0.9rem; color: #500101; margin-top:0;">2. Escanear Códigos</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                         <div style="flex-grow: 1;">
-                            <label for="codigo" class="form-label">Código de Paquete (Tracking)</label>
-                            <input type="text" id="codigo" class="form-control" placeholder="Ej: TRK-12345XYZ">
+                            <input type="text" id="codigo" class="form-control" placeholder="Ej: TRK-12345XYZ" style="font-family: monospace; text-transform: uppercase;">
                         </div>
-                        <button type="button" id="btn-agregar-lista" class="btn-submit" style="background-color: #28a745; padding: 12px 15px;">+ Agregar</button>
+                        <button type="button" id="btn-agregar-lista" class="btn-submit"><i class="fas fa-plus"></i></button>
                     </div>
-                    <div class="lista-lote-container">
-                        <table class="data-table" style="font-size: 12px;">
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Ruta (Origen -> Destino)</th>
-                                    <th style="width: 30px;"></th>
-                                </tr>
-                            </thead>
+                    <div class="lista-lote-container" style="border: 1px solid #e2e8f0; border-radius: 8px; max-height: 150px; overflow-y: auto;">
+                        <table class="data-table" style="margin: 0;">
                             <tbody id="cuerpo-lista-lote">
-                                <tr id="lista-vacia-msg">
-                                    <td colspan="3" style="text-align: center; color: #999;">No hay paquetes en el lote aún.</td>
-                                </tr>
+                                <tr id="lista-vacia-msg"><td colspan="3" style="text-align: center; color: #94a3b8; padding: 15px;">Lista vacía.</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-                <div class="form-actions" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 13px; color: #666;">Total paquetes: <strong id="contador-paquetes">0</strong></span>
-                    <button type="submit" class="btn-submit">Registrar</button>
+                <div class="form-actions" style="justify-content: space-between; align-items: center; margin-top: 15px;">
+                    <span style="font-size: 0.85rem; color: #64748b;">Total: <strong id="contador-paquetes">0</strong></span>
+                    <button type="submit" class="btn-submit">Guardar Todo</button>
                 </div>
             </form>
         </div>
@@ -273,34 +284,63 @@ unset($_SESSION['mensaje']);
 
     <div class="modal-content" id="modal-editar">
         <div class="modal-header">
-            <h2>Editar Status del Paquete</h2>
+            <h2>Editar Paquete</h2>
             <button class="modal-close-btn" data-modal-id="modal-editar">×</button>
         </div>
         <div class="modal-body">
             <form id="form-editar" action="" method="POST" class="form-container">
-                <p>Cambiando status para el paquete: <strong id="codigo-paquete-editar"></strong></p>
-                <div class="form-group">
-                    <label for="editar-status" class="form-label">Nuevo Status</label>
-                    <select id="editar-status" name="status" class="form-control" required></select>
+                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 1rem;">
+                    Editando Código: <strong id="codigo-paquete-editar" style="color: #000;"></strong>
+                </p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label for="editar-origen" class="form-label">Origen</label>
+                        <select id="editar-origen" name="origen_id" class="form-control" required>
+                            <?php foreach ($origenes as $origen): ?>
+                                <option value="<?php echo $origen->Origen_id; ?>"><?php echo htmlspecialchars($origen->Nombre); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editar-tipo-destino" class="form-label">Tipo</label>
+                        <select id="editar-tipo-destino" name="tipo_destino" class="form-control" required>
+                            <option value="Ruta">Ruta</option>
+                            <option value="Tienda">Tienda</option>
+                        </select>
+                    </div>
                 </div>
+
+                <div class="form-group">
+                    <label for="editar-destino" class="form-label">Destino</label>
+                    <select id="editar-destino" name="destino_id" class="form-control" required>
+                         <?php foreach ($destinos as $destino): ?>
+                            <option value="<?php echo $destino->Destino_id; ?>" data-modalidad="<?php echo htmlspecialchars($destino->Modalidad); ?>">
+                                <?php echo htmlspecialchars($destino->Nombre); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label for="editar-status" class="form-label">Status Logístico</label>
+                        <select id="editar-status" name="status" class="form-control" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editar-estado" class="form-label">Estado Sistema</label>
+                        <select id="editar-estado" name="estado" class="form-control">
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="form-actions">
-                    <button type="submit" class="btn-submit">Actualizar Status</button>
+                    <button type="button" class="btn-secondary modal-close-btn" data-modal-id="modal-editar" style="margin-right: auto;">Cancelar</button>
+                    <button type="submit" class="btn-submit">Actualizar Datos</button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <div class="modal-content" id="modal-eliminar">
-        <div class="modal-header">
-            <h2>Confirmar Eliminación</h2>
-            <button class="modal-close-btn" data-modal-id="modal-eliminar">×</button>
-        </div>
-        <div class="modal-body">
-            <p>¿Está seguro de que desea eliminar el paquete <strong id="codigo-paquete-eliminar"></strong>?</p>
-            <div class="form-actions" style="justify-content: flex-end;">
-                <button type="button" class="btn-action modal-close-btn" data-modal-id="modal-eliminar" style="margin-right: 10px;">Cancelar</button>
-                <a id="btn-confirmar-eliminar" href="#" class="btn-submit" style="background-color: #dc3545;">Sí, Eliminar</a>
-            </div>
         </div>
     </div>
 
@@ -309,7 +349,6 @@ unset($_SESSION['mensaje']);
     document.addEventListener('DOMContentLoaded', function() {
         const backdrop = document.getElementById('modal-backdrop');
         
-        // --- FUNCIONES MODAL ---
         function openModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) { modal.classList.add('open'); backdrop.classList.add('open'); }
@@ -319,9 +358,9 @@ unset($_SESSION['mensaje']);
             if (modal) { modal.classList.remove('open'); backdrop.classList.remove('open'); }
         }
 
-        // Cierres globales (Botones X y Fondo)
         document.body.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal-close-btn')) {
+                if(e.target.type === 'button') e.preventDefault();
                 closeModal(e.target.getAttribute('data-modal-id'));
             }
             if (e.target.id === 'modal-backdrop') {
@@ -329,205 +368,200 @@ unset($_SESSION['mensaje']);
             }
         });
 
-        // ==============================================================
-        // 1. LÓGICA DE BÚSQUEDA EN TIEMPO REAL (AJAX)
-        // ==============================================================
+        // --- BÚSQUEDA AJAX ---
         const inputBusqueda = document.getElementById('input-busqueda-realtime');
         const tablaResultados = document.getElementById('tabla-resultados');
         let debounceTimer;
-
         inputBusqueda.addEventListener('input', function() {
             clearTimeout(debounceTimer);
             const termino = this.value;
-
-            // Esperar 300ms después de dejar de escribir para no saturar
             debounceTimer = setTimeout(() => {
-                // Llamada al MISMO archivo pero con ?ajax_mode=1
                 fetch(`?ajax_mode=1&buscar=${encodeURIComponent(termino)}`)
                     .then(response => response.text())
-                    .then(html => {
-                        tablaResultados.innerHTML = html;
-                    })
-                    .catch(err => console.error('Error en búsqueda:', err));
+                    .then(html => { tablaResultados.innerHTML = html; })
+                    .catch(err => console.error('Error:', err));
             }, 300); 
         });
 
-
-        // ==============================================================
-        // 2. DELEGACIÓN DE EVENTOS (PARA QUE LOS BOTONES FUNCIONEN TRAS BUSCAR)
-        // ==============================================================
-        // En lugar de asignar eventos a los botones directamente, escuchamos clics en toda la página
-        // y verificamos si lo que se clickeó fue un botón de editar/eliminar.
-        
-        const modalEditar = document.getElementById('modal-editar');
+        // --- LÓGICA DE EDICIÓN COMPLETA ---
         const formEditar = document.getElementById('form-editar');
-        const selectStatus = document.getElementById('editar-status');
-        const codigoEditarSpan = document.getElementById('codigo-paquete-editar');
-        const modalEliminar = document.getElementById('modal-eliminar');
-        const codigoEliminarSpan = document.getElementById('codigo-paquete-eliminar');
-        const btnConfirmarEliminar = document.getElementById('btn-confirmar-eliminar');
+        const codigoSpan = document.getElementById('codigo-paquete-editar');
+        
+        // Selects del formulario de edición
+        const editOrigen = document.getElementById('editar-origen');
+        const editTipo = document.getElementById('editar-tipo-destino');
+        const editDestino = document.getElementById('editar-destino');
+        const editStatus = document.getElementById('editar-status');
+        const editEstado = document.getElementById('editar-estado');
+
+        const editDestinoOptions = editDestino.querySelectorAll('option'); // Cache options
 
         const statusOpciones = {
             'Ruta': ['En Sede', 'En Ruta', 'Entregado', 'Devolución'],
             'Tienda': ['En Sede', 'Transferido', 'Entregado', 'Devolución']
         };
 
-        document.addEventListener('click', function(e) {
-            // -- DETECTAR CLIC EN EDITAR --
-            const btnEditar = e.target.closest('.btn-open-editar');
-            if (btnEditar) {
-                const codigo = btnEditar.getAttribute('data-codigo');
-                const statusActual = btnEditar.getAttribute('data-status');
-                const modalidad = btnEditar.getAttribute('data-modalidad');
+        // Función auxiliar para filtrar destinos en el modal de edición
+        function filtrarDestinosEdicion(tipoSeleccionado, valorDestinoActual = null) {
+            let primeroVisible = null;
+            let encontradoActual = false;
 
-                formEditar.action = `/liberty/app/db/functions/paquetes/editar.php?codigo=${codigo}`;
-                codigoEditarSpan.textContent = codigo;
-                selectStatus.innerHTML = ''; 
-
-                let opciones = [...(statusOpciones[modalidad] || statusOpciones['Ruta'])];
-                if (statusActual === 'Registrado' && !opciones.includes('Registrado')) {
-                    opciones.unshift('Registrado');
+            for (let i = 0; i < editDestinoOptions.length; i++) {
+                const option = editDestinoOptions[i];
+                const modalidad = option.getAttribute('data-modalidad');
+                
+                if (modalidad === tipoSeleccionado) {
+                    option.style.display = 'block';
+                    if (!primeroVisible) primeroVisible = option.value;
+                    if (valorDestinoActual && option.value == valorDestinoActual) encontradoActual = true;
+                } else {
+                    option.style.display = 'none';
                 }
-                
-                opciones.forEach(opcion => {
-                    const optionEl = document.createElement('option');
-                    optionEl.value = opcion;
-                    optionEl.textContent = opcion;
-                    if (opcion === statusActual) optionEl.selected = true;
-                    selectStatus.appendChild(optionEl);
-                });
-                openModal('modal-editar');
             }
-
-            // -- DETECTAR CLIC EN ELIMINAR --
-            const btnEliminar = e.target.closest('.btn-open-eliminar');
-            if (btnEliminar) {
-                const codigo = btnEliminar.getAttribute('data-codigo');
-                codigoEliminarSpan.textContent = codigo;
-                btnConfirmarEliminar.href = `/liberty/app/db/functions/paquetes/eliminar.php?codigo=${codigo}`;
-                openModal('modal-eliminar');
-            }
-            
-            // -- DETECTAR CLIC EN ABRIR CREAR (ESTÁTICO) --
-            if (e.target.id === 'btn-open-crear') {
-                const formCrearLote = document.getElementById('form-crear-lote');
-                formCrearLote.reset();
-                // Resetear variables globales del lote (ver abajo)
-                lotePaquetes = []; 
-                renderizarLista();
-                
-                const selectDestino = document.getElementById('destino_id');
-                const destinoOptions = selectDestino.querySelectorAll('option');
-                selectDestino.disabled = true;
-                destinoOptions[0].textContent = '-- Primero seleccione un tipo --';
-                for (let i = 1; i < destinoOptions.length; i++) { destinoOptions[i].style.display = 'none'; }
-                
-                openModal('modal-crear');
-            }
-        });
-
-
-        // ==============================================================
-        // 3. LÓGICA DE CREACIÓN LOTE Y FILTROS DESTINO (Mantenida)
-        // ==============================================================
-        const tipoDestinoSelect = document.getElementById('crear-tipo-destino');
-        const destinoSelect = document.getElementById('destino_id');
-        const destinoOptions = destinoSelect.querySelectorAll('option'); 
-
-        tipoDestinoSelect.addEventListener('change', function() {
-            const selectedTypeText = this.value.trim(); 
-            destinoSelect.value = ''; 
-            
-            if (this.value) { 
-                destinoSelect.disabled = false;
-                destinoOptions[0].textContent = '-- Seleccione un destino --';
-                for (let i = 1; i < destinoOptions.length; i++) { 
-                    const option = destinoOptions[i];
-                    const modalidad = option.getAttribute('data-modalidad');
-                    if (modalidad === selectedTypeText) {
-                        option.style.display = 'block'; 
-                    } else {
-                        option.style.display = 'none'; 
-                    }
-                }
+            // Si el destino actual coincide con el tipo, selecciónalo. Si no, selecciona el primero de la lista filtrada.
+            if (encontradoActual) {
+                editDestino.value = valorDestinoActual;
+            } else if (primeroVisible) {
+                editDestino.value = primeroVisible;
             } else {
-                destinoSelect.disabled = true;
-                destinoOptions[0].textContent = '-- Primero seleccione un tipo --';
-                for (let i = 1; i < destinoOptions.length; i++) { destinoOptions[i].style.display = 'none'; }
+                editDestino.value = "";
             }
-        });
-
-        // --- GESTIÓN DE LOTES ---
-        let lotePaquetes = [];
-        const btnAgregarLista = document.getElementById('btn-agregar-lista');
-        const inputCodigo = document.getElementById('codigo');
-        const selectOrigen = document.getElementById('origen_id');
-        const inputTipoDestino = document.getElementById('crear-tipo-destino');
-        //const selectDestino = document.getElementById('destino_id'); // Ya declarado
-        const cuerpoLista = document.getElementById('cuerpo-lista-lote');
-        const msgVacio = document.getElementById('lista-vacia-msg');
-        const contadorSpan = document.getElementById('contador-paquetes');
-        const inputHiddenJson = document.getElementById('paquetes_json');
-        const formCrearLote = document.getElementById('form-crear-lote');
-
-        function renderizarLista() {
-            cuerpoLista.innerHTML = '';
-            if (lotePaquetes.length === 0) {
-                cuerpoLista.appendChild(msgVacio);
-                msgVacio.style.display = 'table-row';
-            } else {
-                lotePaquetes.forEach((paquete, index) => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${paquete.codigo}</strong></td>
-                        <td>${paquete.origenTexto} &rarr; ${paquete.destinoTexto}</td>
-                        <td><button type="button" class="btn-eliminar-item" data-index="${index}" style="color: red; background: none; border: none; font-weight: bold; cursor: pointer;">&times;</button></td>
-                    `;
-                    cuerpoLista.appendChild(tr);
-                });
-            }
-            contadorSpan.textContent = lotePaquetes.length;
         }
 
-        btnAgregarLista.addEventListener('click', function() {
-            const codigo = inputCodigo.value.trim();
-            const origenId = selectOrigen.value;
-            const tipoDestino = inputTipoDestino.value;
-            const destinoId = destinoSelect.value;
+        // Listener para cambio de tipo en el modal de edición
+        editTipo.addEventListener('change', function() {
+            filtrarDestinosEdicion(this.value);
+            // También actualizar status disponibles si cambia el tipo
+            llenarStatusEdicion(this.value, editStatus.value);
+        });
 
-            if (!codigo) { alert("Escriba un código de paquete."); return; }
-            if (!origenId) { alert("Seleccione un Origen."); return; }
-            if (!tipoDestino) { alert("Seleccione Tipo de Destino."); return; }
-            if (!destinoId) { alert("Seleccione un Destino."); return; }
+        function llenarStatusEdicion(tipo, statusActual) {
+            editStatus.innerHTML = '';
+            let opciones = [...(statusOpciones[tipo] || statusOpciones['Ruta'])];
+            
+            // Si el status actual es antiguo (ej 'Registrado') y no está en la lista, agregarlo
+            if (statusActual && !opciones.includes(statusActual) && statusActual !== 'En Sede' && statusActual !== 'En Ruta' && statusActual !== 'Transferido' && statusActual !== 'Entregado' && statusActual !== 'Devolución') {
+                opciones.unshift(statusActual);
+            }
 
-            const existe = lotePaquetes.some(p => p.codigo === codigo);
-            if (existe) { alert("Este código ya está en la lista."); return; }
+            opciones.forEach(opcion => {
+                const optionEl = document.createElement('option');
+                optionEl.value = opcion;
+                optionEl.textContent = opcion;
+                if (opcion === statusActual) optionEl.selected = true;
+                editStatus.appendChild(optionEl);
+            });
+        }
 
-            const origenTexto = selectOrigen.options[selectOrigen.selectedIndex].text;
-            const destinoTexto = destinoSelect.options[destinoSelect.selectedIndex].text;
+        // ABRIR MODAL EDICIÓN
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-open-editar');
+            if (btn) {
+                const codigo = btn.getAttribute('data-codigo');
+                const origen = btn.getAttribute('data-origen');
+                const tipo = btn.getAttribute('data-tipo');
+                const destino = btn.getAttribute('data-destino');
+                const status = btn.getAttribute('data-status');
+                const estado = btn.getAttribute('data-estado');
+
+                formEditar.action = `/liberty/app/db/functions/paquetes/editar.php?codigo=${codigo}`;
+                codigoSpan.textContent = codigo;
+
+                // Setear valores simples
+                editOrigen.value = origen;
+                editTipo.value = tipo;
+                editEstado.value = estado;
+
+                // Lógica dependiente: Destinos y Status
+                filtrarDestinosEdicion(tipo, destino);
+                llenarStatusEdicion(tipo, status);
+
+                openModal('modal-editar');
+            }
+        });
+
+        // --- LÓGICA CREACIÓN (Mantenida igual) ---
+        const createTipo = document.getElementById('crear-tipo-destino');
+        const createDestino = document.getElementById('destino_id');
+        const createDestinoOpts = createDestino.querySelectorAll('option');
+
+        createTipo.addEventListener('change', function() {
+            const tipo = this.value;
+            createDestino.value = '';
+            if (tipo) {
+                createDestino.disabled = false;
+                createDestinoOpts[0].textContent = '-- Seleccione --';
+                for (let i = 1; i < createDestinoOpts.length; i++) {
+                    const opt = createDestinoOpts[i];
+                    opt.style.display = (opt.getAttribute('data-modalidad') === tipo) ? 'block' : 'none';
+                }
+            } else {
+                createDestino.disabled = true;
+                createDestinoOpts[0].textContent = '-- Primero seleccione tipo --';
+                for (let i = 1; i < createDestinoOpts.length; i++) { createDestinoOpts[i].style.display = 'none'; }
+            }
+        });
+
+        // Botón abrir crear
+        document.addEventListener('click', function(e) {
+            if(e.target.id === 'btn-open-crear' || e.target.closest('#btn-open-crear')) {
+                 document.getElementById('form-crear-lote').reset();
+                 lotePaquetes = []; renderizarLista();
+                 createDestino.disabled = true;
+                 openModal('modal-crear');
+            }
+        });
+
+        // Gestión lista lote
+        let lotePaquetes = [];
+        const btnAddList = document.getElementById('btn-agregar-lista');
+        const inCodigo = document.getElementById('codigo');
+        const selOrigen = document.getElementById('origen_id');
+        const bodyList = document.getElementById('cuerpo-lista-lote');
+        const countSpan = document.getElementById('contador-paquetes');
+
+        function renderizarLista() {
+            bodyList.innerHTML = '';
+            if (lotePaquetes.length === 0) {
+                bodyList.innerHTML = '<tr id="lista-vacia-msg"><td colspan="3" style="text-align: center; color: #94a3b8; padding: 15px;">Lista vacía.</td></tr>';
+            } else {
+                lotePaquetes.forEach((p, idx) => {
+                    bodyList.innerHTML += `<tr>
+                        <td style="padding:8px; font-family:monospace;">${p.codigo}</td>
+                        <td style="padding:8px; font-size:0.8rem;">${p.origenTexto} &rarr; ${p.destinoTexto}</td>
+                        <td style="padding:8px;"><button type="button" class="btn-eliminar-item" data-index="${idx}" style="color:#ef4444;border:none;background:none;cursor:pointer;"><i class="fas fa-times"></i></button></td>
+                    </tr>`;
+                });
+            }
+            countSpan.textContent = lotePaquetes.length;
+        }
+
+        btnAddList.addEventListener('click', function() {
+            const cod = inCodigo.value.trim();
+            const org = selOrigen.value;
+            const tip = createTipo.value;
+            const des = createDestino.value;
+
+            if(!cod || !org || !tip || !des) { alert("Complete todos los campos de ruta y código."); return; }
+            if(lotePaquetes.some(p => p.codigo === cod)) { alert("Código ya en lista."); return; }
 
             lotePaquetes.unshift({
-                codigo: codigo, origen_id: origenId, tipo_destino_varchar: tipoDestino,
-                destino_id: destinoId, origenTexto: origenTexto, destinoTexto: destinoTexto
+                codigo: cod, origen_id: org, tipo_destino_varchar: tip, destino_id: des,
+                origenTexto: selOrigen.options[selOrigen.selectedIndex].text,
+                destinoTexto: createDestino.options[createDestino.selectedIndex].text
             });
-            inputCodigo.value = ''; inputCodigo.focus();
+            inCodigo.value = ''; inCodigo.focus();
             renderizarLista();
         });
 
-        cuerpoLista.addEventListener('click', function(e) {
-            if (e.target.classList.contains('btn-eliminar-item')) {
-                const index = e.target.getAttribute('data-index');
-                lotePaquetes.splice(index, 1);
-                renderizarLista();
-            }
+        bodyList.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-eliminar-item');
+            if(btn) { lotePaquetes.splice(btn.getAttribute('data-index'), 1); renderizarLista(); }
         });
 
-        formCrearLote.addEventListener('submit', function(e) {
-            if (lotePaquetes.length === 0) {
-                e.preventDefault(); alert("Debe agregar al menos un paquete.");
-            } else {
-                inputHiddenJson.value = JSON.stringify(lotePaquetes);
-            }
+        document.getElementById('form-crear-lote').addEventListener('submit', function(e) {
+            if(lotePaquetes.length === 0) { e.preventDefault(); alert("Agregue al menos un paquete."); }
+            else { document.getElementById('paquetes_json').value = JSON.stringify(lotePaquetes); }
         });
     });
     </script>
