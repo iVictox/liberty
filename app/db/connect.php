@@ -1,4 +1,7 @@
 <?php
+// 1. Configurar Zona Horaria de PHP (Venezuela)
+date_default_timezone_set('America/Caracas');
+
 $host = 'localhost'; 
 $db   = 'le_db';
 $user = 'root';
@@ -8,16 +11,20 @@ $charset = 'utf8mb4';
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 
 $options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // Lanza excepciones en lugar de errores/warnings
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       // Devuelve resultados como arrays asociativos
-    PDO::ATTR_EMULATE_PREPARES   => false,                  // Usa preparaciones nativas (más seguro)
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
 ];
 
 try {
     $conn = new PDO($dsn, $user, $pass, $options);
-    //echo "Conexión exitosa.";
+    
+    // 2. Sincronizar MySQL también a Venezuela (UTC-4)
+    // Esto asegura que las funciones NOW() de SQL coincidan con time() de PHP
+    $conn->exec("SET time_zone = '-04:00';");
+    
 } catch (\PDOException $e) {
     error_log("Error de conexión: " . $e->getMessage());
-    die("Error: No se pudo conectar a la base de datos. Intente más tarde.");
+    die("Error: No se pudo conectar a la base de datos.");
 }
 ?>

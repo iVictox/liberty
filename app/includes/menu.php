@@ -13,19 +13,14 @@ function is_active_parent($files = [], $current){
     return '';
 }
 
-$paquetes_pages = [ 
-    'gestion.php', 
-    'informe.php'
-];
+$paquetes_pages = ['gestion.php', 'informe.php'];
+$ubicaciones_pages = ['gestion_origenes.php', 'gestion_destinos.php'];
 
-// NUEVA: Lista de páginas de UI
-$ubicaciones_pages = [
-    'gestion_origenes.php', 
-    'gestion_destinos.php'
-];
+// --- VERIFICACIÓN DE ROL ---
+// Asumimos que Rol 3 es 'Administrador'
+$esAdmin = (isset($_SESSION['user_rol']) && $_SESSION['user_rol'] == 3);
 ?>
 
-<!-- Styles & Icons -->
 <link rel="stylesheet" href="/liberty/app/assets/css/sidebar.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -33,12 +28,14 @@ $ubicaciones_pages = [
 
 <nav class="sidebar" aria-label="Sidebar navigation">
     
-    <a href="/perfil.php" class="brand brand-link <?php echo is_active('perfil.php', $current); ?>">
+    <a href="/liberty/perfil.php" class="brand brand-link <?php echo is_active('perfil.php', $current); ?>">
         <img src="/liberty/app/assets/img/logo-le.png" alt="Liberty Express - Logo" class="logo">
         <div>
             <div style="font-weight:600">Liberty Express</div>
             <div style="font-size:12px;opacity:0.8"><?php echo $_SESSION['user_nombre'] . ' ' . $_SESSION['user_apellido']; ?></div>
-            <div style="font-size:12px;opacity:0.8">Administración</div>
+            <div style="font-size:11px;opacity:0.6; margin-top:2px;">
+                <?php echo ($esAdmin) ? 'Administrador' : 'Empleado'; ?>
+            </div>
         </div>
     </a>
 
@@ -46,10 +43,9 @@ $ubicaciones_pages = [
         
         <a href="/liberty/" class="<?php echo is_active('index.php', $current); ?>">
             <span class="icon"><i class="fas fa-home"></i></span>
-            <span>Home</span>
+            <span>Inicio</span>
         </a>
 
-        <!-- Dropdown de Paquetes -->
         <div class="nav-item">
             <a href="/liberty/#" class="nav-toggle <?php echo is_active_parent($paquetes_pages, $current); ?>">
                 <span class="icon"><i class="fas fa-boxes-stacked"></i></span>
@@ -68,7 +64,7 @@ $ubicaciones_pages = [
             </div>
         </div>
 
-        <!-- Dropdown de Ubicaciones (APUNTANDO A LOS NUEVOS ARCHIVOS DE UI) -->
+        <?php if($esAdmin): ?>
         <div class="nav-item">
             <a href="/liberty/#" class="nav-toggle <?php echo is_active_parent($ubicaciones_pages, $current); ?>">
                 <span class="icon"><i class="fas fa-map-signs"></i></span>
@@ -78,18 +74,34 @@ $ubicaciones_pages = [
             <div class="sub-nav">
                 <a href="/liberty/gestion_origenes.php" class="<?php echo is_active('gestion_origenes.php', $current); ?>">
                     <span class="icon"><i class="fas fa-map-pin"></i></span>
-                    <span>Gestionar Orígenes</span>
+                    <span>Orígenes</span>
                 </a>
                 <a href="/liberty/gestion_destinos.php" class="<?php echo is_active('gestion_destinos.php', $current); ?>">
                     <span class="icon"><i class="fas fa-map-marker-alt"></i></span>
-                    <span>Gestionar Destinos</span>
+                    <span>Destinos</span>
                 </a>
             </div>
         </div>
-
+        
         <a href="/liberty/usuario.php" class="<?php echo is_active('usuario.php', $current); ?>">
-            <span class="icon"><i class="fas fa-users"></i></span>
-            <span>Gestión de usuarios</span>
+            <span class="icon"><i class="fas fa-users-cog"></i></span>
+            <span>Gestión de Usuarios</span>
+        </a>
+
+        <a href="/liberty/auditoria.php" class="<?php echo is_active('auditoria.php', $current); ?>">
+            <span class="icon"><i class="fas fa-history"></i></span>
+            <span>Auditoría</span>
+        </a>
+        <?php endif; ?>
+
+        <a href="/liberty/foro.php" class="<?php echo is_active('foro.php', $current); ?>">
+            <span class="icon"><i class="fas fa-comments"></i></span>
+            <span>Foro Interno</span>
+        </a>
+        
+        <a href="/liberty/perfil.php" class="<?php echo is_active('perfil.php', $current); ?>">
+            <span class="icon"><i class="fas fa-user-circle"></i></span>
+            <span>Mi Perfil</span>
         </a>
     </div>
 

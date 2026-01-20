@@ -39,8 +39,9 @@ try {
     $token = bin2hex(random_bytes(32)); // Token seguro
     $expiracion = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-    // 3. Guardar en BD
-    $update = $conn->prepare("UPDATE usuario SET token_password = ?, token_expiracion = ? WHERE id = ?");
+    // 3. Guardar en BD y CAMBIAR ESTADO A INACTIVO (0)
+    // Se inhabilita la cuenta hasta que restablezca la contraseña
+    $update = $conn->prepare("UPDATE usuario SET token_password = ?, token_expiracion = ?, estado = 0 WHERE id = ?");
     $update->execute([$token, $expiracion, $id]);
 
     // 4. Configurar PHPMailer
@@ -70,9 +71,10 @@ try {
             <h2 style='color: #500101;'>Solicitud de Cambio de Contraseña</h2>
             <p>Hola <strong>{$usuario->nombre}</strong>,</p>
             <p>El administrador ha solicitado un restablecimiento de contraseña para tu cuenta.</p>
-            <p>Haz clic en el siguiente botón para crear una nueva contraseña (válido por 1 hora):</p>
+            <p>Por seguridad, <strong>tu cuenta ha sido inhabilitada temporalmente</strong>.</p>
+            <p>Haz clic en el siguiente botón para crear una nueva contraseña y reactivar tu cuenta (válido por 1 hora):</p>
             <p>
-                <a href='$link' style='background-color: #500101; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Restablecer Contraseña</a>
+                <a href='$link' style='background-color: #500101; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Restablecer y Reactivar</a>
             </p>
             <p>Si no funciona el botón, copia este enlace: <br> $link</p>
         </div>
@@ -80,7 +82,7 @@ try {
 
     $mail->send();
 
-    $_SESSION['user_message'] = 'Correo de restablecimiento enviado correctamente a ' . $usuario->correo;
+    $_SESSION['user_message'] = 'Correo enviado. La cuenta ha sido inhabilitada temporalmente hasta que se restablezca la clave.';
 
 } catch (Exception $e) {
     $_SESSION['user_error'] = 'No se pudo enviar el correo. Error: ' . $mail->ErrorInfo;
