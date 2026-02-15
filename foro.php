@@ -6,23 +6,25 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 }
 include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php');
 
-// Función de tiempo
 function tiempoChat($datetime) {
     $time = strtotime($datetime);
     $diff = time() - $time;
     if ($diff < 60) return 'Ahora';
     if ($diff < 3600) return floor($diff / 60) . ' min';
     if ($diff < 86400) {
-        return date('h:i A', $time); // Hora si es hoy
+        return date('h:i A', $time); 
     }
-    return date('d/m h:i A', $time); // Fecha y hora si es antiguo
+    return date('d/m h:i A', $time);
 }
 
-// Cargar más mensajes (100) para que se sienta como un historial
+// --- CORRECCIÓN: FILTRAR ÚLTIMAS 48 HORAS ---
 $sql = "SELECT f.*, u.nombre, u.apellido 
         FROM foro_mensajes f 
         JOIN usuario u ON f.usuario_id = u.id 
-        ORDER BY f.fecha ASC LIMIT 100"; // Orden ASC para que los nuevos queden abajo (estilo chat)
+        WHERE f.fecha >= DATE_SUB(NOW(), INTERVAL 48 HOUR)
+        ORDER BY f.fecha ASC"; 
+// --------------------------------------------
+
 $mensajes = $conn->query($sql)->fetchAll(PDO::FETCH_OBJ);
 ?>
 <!DOCTYPE html>
@@ -31,9 +33,11 @@ $mensajes = $conn->query($sql)->fetchAll(PDO::FETCH_OBJ);
     <meta charset="UTF-8">
     <title>Chat de Equipo - Liberty Express</title>
     <link rel="stylesheet" href="/liberty/app/assets/css/sidebar.css">
-    <link rel="stylesheet" href="/liberty/app/assets/css/forum.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/liberty/app/assets/css/forum.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body style="height: 100vh; overflow: hidden;"> <div class="app-wrap">
+<body style="height: 100vh; overflow: hidden;"> 
+    <div class="app-wrap">
         <?php include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/includes/menu.php'); ?>
         
         <main class="main-content" style="height: 100vh; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column;">
@@ -42,7 +46,7 @@ $mensajes = $conn->query($sql)->fetchAll(PDO::FETCH_OBJ);
                 <div class="chat-header">
                     <div>
                         <h2 class="chat-title"><i class="fas fa-hashtag"></i> Novedades Operativas</h2>
-                        <span class="chat-subtitle"><?php echo count($mensajes); ?> mensajes recientes</span>
+                        <span class="chat-subtitle">Mensajes de las últimas 48 horas</span>
                     </div>
                 </div>
 
@@ -50,7 +54,7 @@ $mensajes = $conn->query($sql)->fetchAll(PDO::FETCH_OBJ);
                     <?php if (empty($mensajes)): ?>
                         <div style="text-align: center; padding: 40px; color: #94a3b8;">
                             <i class="far fa-comments fa-2x"></i><br>
-                            El chat está vacío. ¡Escribe el primer mensaje!
+                            El chat está vacío o no hay mensajes recientes (48h).
                         </div>
                     <?php else: ?>
                         <?php foreach ($mensajes as $msg): ?>
@@ -88,7 +92,6 @@ $mensajes = $conn->query($sql)->fetchAll(PDO::FETCH_OBJ);
 
     <script src="/liberty/app/assets/js/sidebar.js"></script>
     <script>
-        // Auto-scroll al fondo al cargar
         window.onload = function() {
             var feed = document.getElementById("chatFeed");
             feed.scrollTop = feed.scrollHeight;

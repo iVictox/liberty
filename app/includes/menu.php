@@ -17,8 +17,10 @@ $paquetes_pages = ['gestion.php', 'informe.php'];
 $ubicaciones_pages = ['gestion_origenes.php', 'gestion_destinos.php'];
 
 // --- VERIFICACIÓN DE ROL ---
-// Asumimos que Rol 3 es 'Administrador'
-$esAdmin = (isset($_SESSION['user_rol']) && $_SESSION['user_rol'] == 3);
+// Rol 1: Almacenista, Rol 2: Coordinador, Rol 3: Administrador
+$rol = $_SESSION['user_rol'] ?? 0;
+$esAdmin = ($rol == 3);
+$esAlmacenista = ($rol == 1);
 ?>
 
 <link rel="stylesheet" href="/liberty/app/assets/css/sidebar.css">
@@ -34,7 +36,12 @@ $esAdmin = (isset($_SESSION['user_rol']) && $_SESSION['user_rol'] == 3);
             <div style="font-weight:600">Liberty Express</div>
             <div style="font-size:12px;opacity:0.8"><?php echo $_SESSION['user_nombre'] . ' ' . $_SESSION['user_apellido']; ?></div>
             <div style="font-size:11px;opacity:0.6; margin-top:2px;">
-                <?php echo ($esAdmin) ? 'Administrador' : 'Empleado'; ?>
+                <?php 
+                if($rol == 3) echo 'Administrador';
+                elseif($rol == 2) echo 'Coordinador';
+                elseif($rol == 1) echo 'Almacenista';
+                else echo 'Empleado';
+                ?>
             </div>
         </div>
     </a>
@@ -57,10 +64,13 @@ $esAdmin = (isset($_SESSION['user_rol']) && $_SESSION['user_rol'] == 3);
                     <span class="icon"><i class="fas fa-folder-open"></i></span>
                     <span>Gestionar</span>
                 </a>
+                
+                <?php if(!$esAlmacenista): ?>
                 <a href="/liberty/paquetes/informe.php" class="<?php echo is_active('informe.php', $current); ?>">
                     <span class="icon"><i class="fas fa-chart-line"></i></span>
                     <span>Informe</span>
                 </a>
+                <?php endif; ?>
             </div>
         </div>
 

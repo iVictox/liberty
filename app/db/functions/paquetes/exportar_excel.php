@@ -6,20 +6,18 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php');
 
-// Recibir mismos filtros que en informe.php
 $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-01');
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');
 $status = $_GET['status'] ?? '';
 $origen_id = $_GET['origen_id'] ?? '';
 $tipo_destino = $_GET['tipo_destino'] ?? '';
 
-// Configurar encabezados para forzar descarga como Excel
+// Headers para descarga
 header("Content-Type: application/vnd.ms-excel; charset=utf-8");
 header("Content-Disposition: attachment; filename=reporte_liberty_" . date('Ymd_His') . ".xls");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-// Consulta idéntica
 $sql = "
     SELECT 
         p.Codigo, 
@@ -58,9 +56,17 @@ $stmt = $conn->prepare($sql);
 $stmt->execute($params);
 $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Generar Tabla HTML compatible con Excel
 echo "<table>";
 echo "<thead>";
+
+// --- CORRECCIÓN: FECHA Y HORA AL INICIO ---
+echo "<tr>";
+echo "<th colspan='8' style='background-color: #f1f5f9; color: #333; text-align: center; border: 1px solid #ddd; height: 30px;'>";
+echo "<strong>REPORTE OPERATIVO - GENERADO EL: " . date('d/m/Y h:i A') . "</strong>";
+echo "</th>";
+echo "</tr>";
+// ------------------------------------------
+
 echo "<tr style='background-color: #500101; color: white;'>";
 echo "<th>Codigo</th>";
 echo "<th>Fecha Registro</th>";
