@@ -52,7 +52,7 @@ $textoTendenciaEnt = ($tendenciaEntregas >= 0) ? '+' . $tendenciaEntregas . '%' 
 
 // --- FORO DASHBOARD ---
 // 1. Obtenemos los 3 más recientes (DESC)
-$sqlForo = "SELECT f.*, u.nombre, u.apellido FROM foro_mensajes f JOIN usuario u ON f.usuario_id = u.id ORDER BY f.fecha DESC LIMIT 3";
+$sqlForo = "SELECT f.*, u.nombre, u.apellido FROM foro_mensajes f JOIN usuario u ON f.usuario_id = u.id WHERE f.fecha >= DATE_SUB(NOW(), INTERVAL 48 HOUR) ORDER BY f.fecha DESC LIMIT 3";
 $mensajesDash = $conn->query($sqlForo)->fetchAll(PDO::FETCH_OBJ);
 
 // 2. CAMBIO AQUÍ: Invertimos el array para mostrarlos cronológicamente (Antiguo -> Nuevo)

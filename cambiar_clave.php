@@ -36,6 +36,38 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             text-align: center;
             font-size: 0.9rem;
         }
+
+/* Nuevos estilos para desamontonar el formulario */
+        .form-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+        .password-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        .password-box input:focus {
+            border-color: #500101;
+            outline: none;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.05rem;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>

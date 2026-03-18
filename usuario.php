@@ -81,8 +81,8 @@ $rolesDisponibles = obtenerRoles();
                         <input type="text" id="buscador" onkeyup="filtrarTabla()" placeholder="Buscar por nombre, apellido o correo..." style="padding-left: 40px; width: 100%;">
                     </div>
                     <div class="filter-status">
-                        <select id="filtroEstado" onchange="filtrarTabla()" class="form-control" style="height: 100%;">
-                            <option value="todos">Todos los Estados</option>
+                    <select id="filtroEstado" onchange="filtrarTabla()" class="form-control" style="padding: 8px 15px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; background-color: #fff; cursor: pointer;">
+                    <option value="todos">Todos los Estados</option>
                             <option value="Activo">Activos</option>
                             <option value="Inactivo">Inactivos</option>
                         </select>
