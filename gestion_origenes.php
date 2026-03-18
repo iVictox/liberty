@@ -134,7 +134,7 @@ try {
             </form>
         </div>
     </div>
-
+<script src="/liberty/app/assets/js/sidebar.js"></script>
     <!-- JavaScript para los modales -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
