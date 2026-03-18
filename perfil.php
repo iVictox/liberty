@@ -12,6 +12,51 @@ $id = $_SESSION['user_id'];
 $mensaje = '';
 $tipo_mensaje = '';
 
+// --- LÓGICA DE SUBIDA DE FOTO ---
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['foto_perfil'])) {
+    $archivo = $_FILES['foto_perfil'];
+    $nombre_archivo = $archivo['name'];
+    $tipo = $archivo['type'];
+    $tmp_name = $archivo['tmp_name'];
+    $error = $archivo['error'];
+    $size = $archivo['size'];
+
+    // Validaciones básicas
+    $permitidos = ['image/jpeg', 'image/png', 'image/jpg'];
+    $max_size = 2 * 1024 * 1024; // 2MB
+
+    if ($error === 0) {
+        if (in_array($tipo, $permitidos) && $size <= $max_size) {
+            // Crear nombre único: id_timestamp.ext
+            $ext = pathinfo($nombre_archivo, PATHINFO_EXTENSION);
+            $nuevo_nombre = $id . '_' . time() . '.' . $ext;
+            $ruta_destino = $_SERVER['DOCUMENT_ROOT'] . '/liberty/app/assets/uploads/perfiles/' . $nuevo_nombre;
+
+            // Mover archivo
+            if (move_uploaded_file($tmp_name, $ruta_destino)) {
+                // Actualizar BD
+                $stmt = $conn->prepare("UPDATE usuario SET foto_perfil = ? WHERE id = ?");
+                if ($stmt->execute([$nuevo_nombre, $id])) {
+                    // Actualizar variable de sesión para que el menú cambie al instante
+                    $_SESSION['user_foto'] = $nuevo_nombre;
+                    $mensaje = "Foto de perfil actualizada correctamente.";
+                    $tipo_mensaje = 'exito';
+                } else {
+                    $mensaje = "Error al guardar en base de datos.";
+                    $tipo_mensaje = 'error';
+                }
+            } else {
+                $mensaje = "Error al subir el archivo al servidor.";
+                $tipo_mensaje = 'error';
+            }
+        } else {
+            $mensaje = "Formato no válido (solo JPG/PNG) o archivo muy pesado (max 2MB).";
+            $tipo_mensaje = 'error';
+        }
+    }
+}
+
+// --- LÓGICA DE CAMBIO DE CONTRASEÑA ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'update_password') {
     $actual = $_POST['pass_actual'];
     $nueva = $_POST['pass_nueva'];
@@ -42,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     }
 }
 
+// Obtener datos frescos
 $stmt = $conn->prepare("SELECT * FROM usuario WHERE id = ?");
 $stmt->execute([$id]);
 $usuario = $stmt->fetch(PDO::FETCH_OBJ);
@@ -57,7 +103,11 @@ $usuario = $stmt->fetch(PDO::FETCH_OBJ);
     <style>
         .profile-card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); max-width: 700px; margin: 0 auto; }
         .profile-header { text-align: center; margin-bottom: 2rem; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-        .profile-avatar { width: 100px; height: 100px; background: #500101; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .profile-avatar-container { position: relative; width: 120px; height: 120px; margin: 0 auto 1rem; }
+        .profile-avatar { width: 100%; height: 100%; background: #500101; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; overflow: hidden; object-fit: cover; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .btn-upload-label { position: absolute; bottom: 0; right: 0; background: #333; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.3s; }
+        .btn-upload-label:hover { background: #500101; }
         .msg { padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center; }
         .msg.error { background: #fee2e2; color: #991b1b; }
         .msg.exito { background: #dcfce7; color: #166534; }
@@ -70,10 +120,27 @@ $usuario = $stmt->fetch(PDO::FETCH_OBJ);
         
         <main class="main-content">
             <div class="profile-card">
+                <?php if ($mensaje): ?>
+                    <div class="msg <?php echo $tipo_mensaje; ?>"><?php echo $mensaje; ?></div>
+                <?php endif; ?>
+
                 <div class="profile-header">
-                    <div class="profile-avatar">
-                        <?php echo strtoupper(substr($usuario->nombre, 0, 1)); ?>
-                    </div>
+                    <form action="" method="POST" enctype="multipart/form-data" id="formFoto">
+                        <div class="profile-avatar-container">
+                            <div class="profile-avatar">
+                                <?php if (!empty($usuario->foto_perfil) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/assets/uploads/perfiles/' . $usuario->foto_perfil)): ?>
+                                    <img src="/liberty/app/assets/uploads/perfiles/<?php echo $usuario->foto_perfil; ?>" alt="Foto Perfil">
+                                <?php else: ?>
+                                    <?php echo strtoupper(substr($usuario->nombre, 0, 1)); ?>
+                                <?php endif; ?>
+                            </div>
+                            <label for="uploadFoto" class="btn-upload-label" title="Cambiar Foto">
+                                <i class="fas fa-camera"></i>
+                            </label>
+                            <input type="file" name="foto_perfil" id="uploadFoto" style="display: none;" onchange="document.getElementById('formFoto').submit();">
+                        </div>
+                    </form>
+
                     <h2><?php echo htmlspecialchars($usuario->nombre . ' ' . $usuario->apellido); ?></h2>
                     <div>
                         <span class="badge badge-info"><?php echo traducirRol($usuario->rol_id); ?></span>
@@ -82,10 +149,6 @@ $usuario = $stmt->fetch(PDO::FETCH_OBJ);
                         </span>
                     </div>
                 </div>
-
-                <?php if ($mensaje): ?>
-                    <div class="msg <?php echo $tipo_mensaje; ?>"><?php echo $mensaje; ?></div>
-                <?php endif; ?>
 
                 <form method="POST" class="form-container">
                     <h3 style="margin-bottom: 15px; color: #500101;"><i class="fas fa-id-card"></i> Información Personal</h3>
