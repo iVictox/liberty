@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 19-11-2025 a las 23:31:18
+-- Tiempo de generación: 15-02-2026 a las 23:21:54
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -39,6 +39,28 @@ CREATE TABLE `actividad` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `auditoria`
+--
+
+CREATE TABLE `auditoria` (
+  `id` int(11) NOT NULL,
+  `fecha` datetime DEFAULT current_timestamp(),
+  `usuario_id` int(11) DEFAULT NULL,
+  `accion` varchar(50) DEFAULT NULL,
+  `detalles` text DEFAULT NULL,
+  `ip` varchar(45) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `auditoria`
+--
+
+INSERT INTO `auditoria` (`id`, `fecha`, `usuario_id`, `accion`, `detalles`, `ip`) VALUES
+(2, '2026-02-15 18:21:38', 1, 'Registro Lote', 'Lote de 1 paquetes. Códigos: TRAS4343', '::1');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `destino`
 --
 
@@ -54,8 +76,20 @@ CREATE TABLE `destino` (
 --
 
 INSERT INTO `destino` (`Destino_id`, `Nombre`, `Modalidad`, `Estado`) VALUES
-(3, 'Caracas', 'Tienda', 'Activo'),
-(4, 'Naguanagua', 'Ruta', 'Activo');
+(6, 'Prueba', 'Ruta', 'Activo');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `foro_mensajes`
+--
+
+CREATE TABLE `foro_mensajes` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `mensaje` text NOT NULL,
+  `fecha` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -79,16 +113,16 @@ CREATE TABLE `notificacion` (
 
 CREATE TABLE `origen` (
   `Origen_id` int(11) NOT NULL,
-  `Nombre` varchar(100) NOT NULL
+  `Nombre` varchar(100) NOT NULL,
+  `Estado` enum('Activo','Inactivo') DEFAULT 'Activo'
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Volcado de datos para la tabla `origen`
 --
 
-INSERT INTO `origen` (`Origen_id`, `Nombre`) VALUES
-(9, 'Internacional'),
-(6, 'Nacional');
+INSERT INTO `origen` (`Origen_id`, `Nombre`, `Estado`) VALUES
+(13, 'Prueba', 'Activo');
 
 -- --------------------------------------------------------
 
@@ -104,20 +138,17 @@ CREATE TABLE `paquete` (
   `Destino_id` int(11) NOT NULL,
   `Usuario_id` int(11) NOT NULL,
   `Status` varchar(20) DEFAULT 'Registrado',
-  `Estado` int(1) NOT NULL DEFAULT 1
+  `Comentario_Devolucion` text DEFAULT NULL,
+  `Estado` int(1) NOT NULL DEFAULT 1,
+  `Motivo_Devolucion` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Volcado de datos para la tabla `paquete`
 --
 
-INSERT INTO `paquete` (`Codigo`, `Origen_id`, `Fecha_Registro`, `Tipo_Destino_ID`, `Destino_id`, `Usuario_id`, `Status`, `Estado`) VALUES
-('NC-1304059295', 6, '2025-11-17 12:25:09', 'Ruta', 4, 1, 'En Sede', 1),
-('NC-29842897', 6, '2025-11-10 13:48:39', 'Tienda', 3, 1, 'En Sede', 1),
-('NC-95830ASEFD', 9, '2025-11-02 20:54:40', 'Tienda', 3, 1, 'En Sede', 1),
-('NC13859596978', 6, '2025-11-17 12:25:09', 'Ruta', 4, 1, 'En Ruta', 1),
-('WR-9587584', 9, '2025-11-17 13:28:50', 'Ruta', 4, 7, 'En Sede', 0),
-('WR-io40456089', 9, '2025-11-02 20:58:40', 'Ruta', 4, 1, 'Entregado', 1);
+INSERT INTO `paquete` (`Codigo`, `Origen_id`, `Fecha_Registro`, `Tipo_Destino_ID`, `Destino_id`, `Usuario_id`, `Status`, `Comentario_Devolucion`, `Estado`, `Motivo_Devolucion`) VALUES
+('TRAS4343', 13, '2026-02-15 22:21:38', 'Ruta', 6, 1, 'En Sede', NULL, 1, NULL);
 
 -- --------------------------------------------------------
 
@@ -156,18 +187,18 @@ CREATE TABLE `usuario` (
   `rol_id` int(11) NOT NULL,
   `requiere_cambio` int(1) NOT NULL DEFAULT 1,
   `token_password` varchar(100) DEFAULT NULL,
-  `token_expiracion` datetime DEFAULT NULL
+  `token_expiracion` datetime DEFAULT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_expira` datetime DEFAULT NULL,
+  `foto_perfil` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Volcado de datos para la tabla `usuario`
 --
 
-INSERT INTO `usuario` (`id`, `nombre`, `apellido`, `turno`, `correo`, `contraseña`, `estado`, `rol_id`, `requiere_cambio`, `token_password`, `token_expiracion`) VALUES
-(1, 'Anderliz', 'Mendoza', 0, 'menzaander@gmail.com', '$2y$10$IYz2VRTvTeq91MQEkTsfnegAN7kK59wBAT/lbwxCa30Y8.7LQs5Fi', 1, 3, 0, NULL, NULL),
-(5, 'Ana', 'Lopez', 1, 'Ana@gmail.com', '$2y$10$oX3iJOHtQaQv/XQA7AIp1uq6fHPWRJFaQQj/DEhLz4oJla.0.kT7.', 1, 3, 1, NULL, NULL),
-(7, 'Beslith', 'Hidalgo', 0, 'b@gmail.com', '$2y$10$ccw4bHjbRiCP0bbn1yTth.eJQssCX3VQU2MdHxGOPcwVoEou5pl1.', 1, 3, 1, NULL, NULL),
-(9, 'Victor', 'De Abreu', 0, 'deabreuvictorhugo@gmail.com', '$2y$10$Rks4feto9vNnmJK96KdGxO.jFvV0TgXvRGEc9JQB7NFTuB5rOl0zm', 1, 3, 0, NULL, NULL);
+INSERT INTO `usuario` (`id`, `nombre`, `apellido`, `turno`, `correo`, `contraseña`, `estado`, `rol_id`, `requiere_cambio`, `token_password`, `token_expiracion`, `reset_token`, `reset_expira`, `foto_perfil`) VALUES
+(1, 'Anderliz', 'Mendoza', 0, 'menzaander@gmail.com', '$2y$10$IYz2VRTvTeq91MQEkTsfnegAN7kK59wBAT/lbwxCa30Y8.7LQs5Fi', 1, 3, 0, NULL, NULL, NULL, NULL, '1_1771189208.png');
 
 --
 -- Índices para tablas volcadas
@@ -180,10 +211,24 @@ ALTER TABLE `actividad`
   ADD PRIMARY KEY (`Actividad_id`);
 
 --
+-- Indices de la tabla `auditoria`
+--
+ALTER TABLE `auditoria`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `usuario_id` (`usuario_id`);
+
+--
 -- Indices de la tabla `destino`
 --
 ALTER TABLE `destino`
   ADD PRIMARY KEY (`Destino_id`);
+
+--
+-- Indices de la tabla `foro_mensajes`
+--
+ALTER TABLE `foro_mensajes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `usuario_id` (`usuario_id`);
 
 --
 -- Indices de la tabla `notificacion`
@@ -228,10 +273,22 @@ ALTER TABLE `actividad`
   MODIFY `Actividad_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `auditoria`
+--
+ALTER TABLE `auditoria`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT de la tabla `destino`
 --
 ALTER TABLE `destino`
-  MODIFY `Destino_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `Destino_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT de la tabla `foro_mensajes`
+--
+ALTER TABLE `foro_mensajes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `notificacion`
@@ -243,7 +300,7 @@ ALTER TABLE `notificacion`
 -- AUTO_INCREMENT de la tabla `origen`
 --
 ALTER TABLE `origen`
-  MODIFY `Origen_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `Origen_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT de la tabla `rol`
@@ -255,7 +312,23 @@ ALTER TABLE `rol`
 -- AUTO_INCREMENT de la tabla `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `auditoria`
+--
+ALTER TABLE `auditoria`
+  ADD CONSTRAINT `auditoria_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `foro_mensajes`
+--
+ALTER TABLE `foro_mensajes`
+  ADD CONSTRAINT `foro_mensajes_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

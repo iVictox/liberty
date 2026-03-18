@@ -17,21 +17,35 @@ $paquetes_pages = ['gestion.php', 'informe.php'];
 $ubicaciones_pages = ['gestion_origenes.php', 'gestion_destinos.php'];
 
 // --- VERIFICACIÓN DE ROL ---
-// Rol 1: Almacenista, Rol 2: Coordinador, Rol 3: Administrador
 $rol = $_SESSION['user_rol'] ?? 0;
 $esAdmin = ($rol == 3);
 $esAlmacenista = ($rol == 1);
+
+// Verificar si hay foto en sesión (si no, intentar buscarla o usar iniciales)
+// Nota: perfil.php actualiza $_SESSION['user_foto'] al subirla.
+$user_foto = $_SESSION['user_foto'] ?? null;
 ?>
 
 <link rel="stylesheet" href="/liberty/app/assets/css/sidebar.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .brand-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.2); }
+    .brand-avatar-initials { width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid rgba(255,255,255,0.2); }
+</style>
 
 <button class="toggle-btn" aria-label="Toggle menu" aria-expanded="false">☰</button>
 
 <nav class="sidebar" aria-label="Sidebar navigation">
     
     <a href="/liberty/perfil.php" class="brand brand-link <?php echo is_active('perfil.php', $current); ?>">
-        <img src="/liberty/app/assets/img/logo-le.png" alt="Liberty Express - Logo" class="logo">
+        <?php if (!empty($user_foto) && file_exists($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/assets/uploads/perfiles/' . $user_foto)): ?>
+            <img src="/liberty/app/assets/uploads/perfiles/<?php echo $user_foto; ?>" class="brand-avatar-img" alt="Perfil">
+        <?php else: ?>
+            <div class="brand-avatar-initials">
+                <img src="/liberty/app/assets/img/logo-le.png" alt="Liberty Express - Logo" class="logo">
+            </div>
+        <?php endif; ?>
+        
         <div>
             <div style="font-weight:600">Liberty Express</div>
             <div style="font-size:12px;opacity:0.8"><?php echo $_SESSION['user_nombre'] . ' ' . $_SESSION['user_apellido']; ?></div>
