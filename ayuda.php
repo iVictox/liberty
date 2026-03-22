@@ -39,9 +39,9 @@ include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php');
                 </div>
 
                 <div class="help-card">
-                    <h2 class="help-title"><i class="fas fa-truck-loading"></i> Guía de Operaciones (Almacén)</h2>
+                    <h2 class="help-title"><i class="fas fa-truck-loading"></i> Guía de Operaciones</h2>
                     <p>Procedimientos para el registro de origen, destino y cambio de estatus de paquetes.</p>
-                    <a href="/liberty/app/assets/manuales/manual_almacen.pdf" target="_blank" class="btn-download">
+                    <a href="/liberty/app/assets/manuales/manual_operaciones.pdf" target="_blank" class="btn-download">
                         <i class="fas fa-file-pdf"></i> Ver Manual PDF
                     </a>
                 </div>
