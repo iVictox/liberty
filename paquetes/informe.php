@@ -8,6 +8,19 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php');
 
+// --- CORRECCIÓN: RESTRICCIÓN DE ACCESO PARA ALMACENISTA ---
+$rol_id_actual = $_SESSION['user_rol'] ?? 0;
+if ($rol_id_actual > 0) {
+    $stmt_rol = $conn->prepare("SELECT Nombre FROM rol WHERE id = ?");
+    $stmt_rol->execute([$rol_id_actual]);
+    $rol_info = $stmt_rol->fetch(PDO::FETCH_ASSOC);
+    if ($rol_info && strtolower($rol_info['Nombre']) === 'almacenista') {
+        // Redirigir al dashboard si es almacenista
+        header('Location: /liberty/index.php');
+        exit;
+    }
+}
+
 // --- FILTROS ---
 $fecha_inicio = $_GET['fecha_inicio'] ?? date('Y-m-01'); // Primer día del mes actual por defecto
 $fecha_fin = $_GET['fecha_fin'] ?? date('Y-m-d');

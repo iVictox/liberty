@@ -59,6 +59,18 @@ $mensajesDash = $conn->query($sqlForo)->fetchAll(PDO::FETCH_OBJ);
 $mensajesDash = array_reverse($mensajesDash);
 
 $nombreUsuario = $_SESSION['user_nombre'] ?? 'Usuario';
+
+// CORRECCIÓN: Obtener el nombre del rol del usuario actual
+$rol_id_actual = $_SESSION['user_rol'] ?? 0;
+$rol_nombre = '';
+if ($rol_id_actual > 0) {
+    $stmt_rol = $conn->prepare("SELECT Nombre FROM rol WHERE id = ?");
+    $stmt_rol->execute([$rol_id_actual]);
+    $rol_info = $stmt_rol->fetch(PDO::FETCH_ASSOC);
+    if ($rol_info) {
+        $rol_nombre = strtolower($rol_info['Nombre']);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -87,7 +99,10 @@ $nombreUsuario = $_SESSION['user_nombre'] ?? 'Usuario';
                 <div class="quick-actions">
                     <a href="/liberty/paquetes/gestion.php" class="action-btn"><i class="fas fa-box-open"></i> Registrar Paquete</a>
                     <a href="/liberty/paquetes/gestion.php" class="action-btn"><i class="fas fa-search"></i> Buscar Envío</a>
-                    <a href="/liberty/paquetes/informe.php" class="action-btn"><i class="fas fa-file-alt"></i> Ver Informes</a>
+                    
+                    <?php if ($rol_nombre !== 'almacenista'): ?>
+                        <a href="/liberty/paquetes/informe.php" class="action-btn"><i class="fas fa-file-alt"></i> Ver Informes</a>
+                    <?php endif; ?>
                 </div>
             </div>
 

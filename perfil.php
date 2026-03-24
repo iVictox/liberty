@@ -57,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['foto_perfil'])) {
 }
 
 // --- LÓGICA DE CAMBIO DE CONTRASEÑA ---
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'update_password') {
+// CORRECCIÓN: Se cambió "action" por "perfil_action" para que users.php no lo intercepte
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['perfil_action']) && $_POST['perfil_action'] == 'update_password') {
     $actual = $_POST['pass_actual'];
     $nueva = $_POST['pass_nueva'];
     $confirmar = $_POST['pass_confirmar'];
@@ -165,7 +166,7 @@ $usuario = $stmt->fetch(PDO::FETCH_OBJ);
                     </div>
                     
                     <h3 style="margin-bottom: 15px; margin-top: 30px; color: #500101;"><i class="fas fa-lock"></i> Seguridad</h3>
-                    <input type="hidden" name="action" value="update_password">
+                    <input type="hidden" name="perfil_action" value="update_password">
                     
                     <div class="form-group">
                         <label class="form-label">Contraseña Actual</label>
