@@ -5,6 +5,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit;
 }
 include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php');
+
+// Obtenemos el rol del usuario actual
+$rol = $_SESSION['user_rol'] ?? 0;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -38,15 +41,17 @@ include($_SERVER['DOCUMENT_ROOT'] . '/liberty/app/db/connect.php');
                     </a>
                 </div>
 
+                <?php if($rol != 1): ?>
                 <div class="help-card">
-                    <h2 class="help-title"><i class="fas fa-truck-loading"></i> Guía de Operaciones (Almacén)</h2>
+                    <h2 class="help-title"><i class="fas fa-truck-loading"></i> Guía de Operaciones</h2>
                     <p>Procedimientos para el registro de origen, destino y cambio de estatus de paquetes.</p>
-                    <a href="/liberty/app/assets/manuales/manual_almacen.pdf" target="_blank" class="btn-download">
+                    <a href="/liberty/app/assets/manuales/manual_operaciones.pdf" target="_blank" class="btn-download">
                         <i class="fas fa-file-pdf"></i> Ver Manual PDF
                     </a>
                 </div>
+                <?php endif; ?>
 
-                <?php if($_SESSION['user_rol'] == 3): // Solo Admin ?>
+                <?php if($rol == 3): ?>
                 <div class="help-card" style="border-left: 5px solid #500101;">
                     <h2 class="help-title"><i class="fas fa-user-shield"></i> Manual de Administrador</h2>
                     <p>Gestión de usuarios, auditoría y reportes avanzados.</p>

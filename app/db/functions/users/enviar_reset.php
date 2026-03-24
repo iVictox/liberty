@@ -46,7 +46,7 @@ try {
     $mail->Host       = 'smtp.gmail.com';
     $mail->SMTPAuth   = true;
     $mail->Username   = 'libertyexpress.system@gmail.com';
-    $mail->Password   = 'loyq pexn oyif mtku'; 
+    $mail->Password   = 'mtgj lffk culy uwkc'; 
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     $mail->Port       = 465;
 
